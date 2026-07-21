@@ -1,0 +1,13 @@
+{
+  "id": "opportunity-map",
+  "title": "Demand & Supply Opportunity Map",
+  "url": "https://pdparker.github.io/demand-supply-map/",
+  "repo": "pdparker/demand-supply-map",
+  "lastBuild": "2026-07-21",
+  "dataSources": [
+    { "name": "Domestic university application share by field (Student Interest Signals / Dept of Education)", "vintage": "2010-2024" },
+    { "name": "CRICOS course net change by broad field (CRICOS dashboard)", "vintage": "2025 vs 2026" },
+    { "name": "ACU commencing enrolments by field (Student Interest Signals)", "vintage": "2017-2024" }
+  ],
+  "notes": "Joins domestic demand momentum (application share by ASCED broad field) against international-register supply momentum (CRICOS net course change) to map fields as Open / Hot / Crowded / Fading, with an ACU-portfolio overlay. Demand and supply are different markets (domestic vs international register) — read directionally. CRICOS all-levels supply is VET-dominated; the higher-ed cut is the university lens."
+}
