@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demand &amp; Supply Opportunity Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<script src="https://pdparker.github.io/dashboard-commons/commons.js" data-dash="opportunity-map"></script>
+<style>
+:root{
+  --purple:#3C1053; --purple-2:#5A2A78; --purple-lite:#6E4B9E;
+  --red:#F2120C; --red-soft:rgba(242,18,12,.10);
+  --sand:#FBF6F0; --sand-2:#F3EBE1; --card:#FFFFFF;
+  --ink:#1E1B18; --muted:#5C5651; --line:rgba(30,27,24,.10);
+  --gold:#B8860B; --slate:#3E6D8E; --ok:#2E7D5B;
+  /* quadrant palette */
+  --q-open:#2E7D5B; --q-hot:#F2120C; --q-crowded:#B8860B; --q-fading:#3E6D8E;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,Helvetica,sans-serif;background:var(--sand);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
+/* ── Masthead ── */
+.masthead{background:linear-gradient(135deg,#2A0B3B 0%,var(--purple) 55%,#4A1A66 100%);color:#fff;padding:26px 32px 22px;}
+.mh-top{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+.mh-title{font-size:1.6rem;font-weight:800;letter-spacing:-.02em;line-height:1.05;}
+.mh-sub{font-size:.82rem;color:rgba(255,255,255,.78);margin-top:8px;max-width:720px;line-height:1.55;}
+.mh-caveat{font-size:.74rem;color:#FFD9A0;margin-top:9px;max-width:720px;line-height:1.5;display:flex;gap:7px;align-items:flex-start;}
+.mh-caveat b{color:#fff;font-weight:700;}
+.mh-ctrls{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;}
+.seg-group{display:flex;flex-direction:column;gap:5px;}
+.seg-group>label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.55);}
+.seg{display:inline-flex;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:3px;gap:2px;}
+.seg button{font-family:Arial,Helvetica,sans-serif;font-size:.76rem;font-weight:700;color:rgba(255,255,255,.72);background:transparent;border:none;border-radius:6px;padding:7px 13px;cursor:pointer;white-space:nowrap;transition:all .12s;}
+.seg button:hover{color:#fff;}
+.seg button.on{background:#fff;color:var(--purple);}
+.btn-csv{font-family:Arial,Helvetica,sans-serif;font-size:.78rem;font-weight:700;color:#fff;background:var(--red);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;align-self:flex-end;white-space:nowrap;transition:filter .15s;}
+.btn-csv:hover{filter:brightness(1.08);}
+/* ── Layout ── */
+.main{padding:22px 32px 56px;max-width:1500px;margin:0 auto;}
+.krow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
+.kpi{background:var(--card);border-radius:14px;padding:20px 22px;box-shadow:0 4px 22px rgba(60,16,83,.06);border:1px solid var(--line);position:relative;overflow:hidden;}
+.kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--purple);}
+.kpi.k-open::before{background:var(--q-open);}
+.kpi.k-hot::before{background:var(--q-hot);}
+.kpi.k-crowded::before{background:var(--q-crowded);}
+.kpi.k-fading::before{background:var(--q-fading);}
+.klbl{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px;line-height:1.3;min-height:2.4em;}
+.kval{font-family:'Manrope';font-size:1.5rem;font-weight:800;letter-spacing:-.02em;line-height:1.05;color:var(--ink);}
+.ksub{font-size:.72rem;color:var(--muted);margin-top:8px;line-height:1.45;}
+.qbadge{display:inline-block;font-size:.58rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-top:9px;color:#fff;}
+.qbadge.OPEN{background:var(--q-open);} .qbadge.HOT{background:var(--q-hot);}
+.qbadge.CROWDED{background:var(--q-crowded);} .qbadge.FADING{background:var(--q-fading);}
+/* ── Cards ── */
+.card{background:var(--card);border-radius:14px;padding:22px 24px;box-shadow:0 4px 22px rgba(60,16,83,.06);border:1px solid var(--line);margin-bottom:20px;}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
+.card-t{font-size:1.02rem;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+.card-s{font-size:.74rem;color:var(--muted);margin-top:3px;max-width:760px;line-height:1.5;}
+.grid-2{display:grid;grid-template-columns:1.55fr 1fr;gap:24px;align-items:start;}
+.chart-wrap{position:relative;height:300px;width:100%;}
+.chart-wrap.quad{height:480px;}
+.chart-wrap.tall{height:320px;}
+/* quadrant legend */
+.qlegend{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.qcell{border-radius:10px;padding:11px 13px;border:1px solid var(--line);}
+.qcell .qh{display:flex;align-items:center;gap:7px;font-family:'Manrope';font-weight:800;font-size:.86rem;letter-spacing:-.01em;}
+.qcell .qdot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.qcell .qd{font-size:.7rem;color:var(--muted);margin-top:5px;line-height:1.45;}
+.qcell.OPEN{background:rgba(46,125,91,.07);border-color:rgba(46,125,91,.28);}
+.qcell.HOT{background:rgba(242,18,12,.06);border-color:rgba(242,18,12,.24);}
+.qcell.CROWDED{background:rgba(184,134,11,.07);border-color:rgba(184,134,11,.28);}
+.qcell.FADING{background:rgba(62,109,142,.07);border-color:rgba(62,109,142,.26);}
+.qaxis-note{font-size:.7rem;color:var(--muted);line-height:1.5;margin-top:12px;background:rgba(60,16,83,.05);border:1px dashed rgba(60,16,83,.22);border-radius:9px;padding:10px 12px;}
+.qaxis-note b{color:var(--purple);}
+/* ranked bars */
+.bars{display:flex;flex-direction:column;gap:9px;}
+.bar-row{display:grid;grid-template-columns:210px 1fr 176px;align-items:center;gap:12px;}
+.bar-lbl{font-size:.76rem;color:var(--ink);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+.bar-lbl .acu-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex:none;}
+.bar-track{position:relative;height:22px;background:var(--sand-2);border-radius:5px;overflow:hidden;}
+.bar-track .zero{position:absolute;top:0;bottom:0;width:1.5px;background:rgba(30,27,24,.35);}
+.bar-fill{position:absolute;top:0;bottom:0;border-radius:4px;}
+.bar-fill.OPEN{background:var(--q-open);} .bar-fill.HOT{background:var(--q-hot);}
+.bar-fill.CROWDED{background:var(--q-crowded);} .bar-fill.FADING{background:var(--q-fading);}
+.bar-val{font-size:.72rem;color:var(--muted);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;display:flex;align-items:center;justify-content:flex-end;gap:6px;}
+.bar-val b{font-family:'Manrope';color:var(--ink);font-weight:700;}
+.qtag{display:inline-block;font-size:.55rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:9px;color:#fff;}
+.qtag.OPEN{background:var(--q-open);} .qtag.HOT{background:var(--q-hot);}
+.qtag.CROWDED{background:var(--q-crowded);} .qtag.FADING{background:var(--q-fading);}
+.legend{display:flex;gap:16px;font-size:.68rem;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.legend span{display:inline-flex;align-items:center;gap:6px;}
+.swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+.swatch.hollow{background:transparent;border:1.5px dashed var(--muted);}
+/* field detail */
+.card-sel{font-family:Arial,Helvetica,sans-serif;font-size:.78rem;font-weight:700;color:var(--purple);background:var(--sand);border:1px solid rgba(60,16,83,.28);border-radius:8px;padding:7px 11px;cursor:pointer;outline:none;min-width:230px;}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:8px;}
+.strip-c{background:var(--sand);border-radius:9px;padding:10px 8px;text-align:center;border:1px solid var(--line);}
+.strip-c.neg{border-color:rgba(242,18,12,.3);background:rgba(242,18,12,.05);}
+.strip-c.pos{border-color:rgba(46,125,91,.3);background:rgba(46,125,91,.05);}
+.strip-y{font-size:.58rem;font-weight:700;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;}
+.strip-v{font-family:'Manrope';font-size:1.15rem;font-weight:800;color:var(--purple);margin-top:3px;}
+.strip-c.neg .strip-v{color:var(--red);} .strip-c.pos .strip-v{color:var(--ok);}
+.strip-n{font-size:.6rem;color:var(--muted);margin-top:2px;}
+.readout{background:linear-gradient(180deg,#fff 0%,var(--sand) 100%);border:1px solid var(--line);border-left:4px solid var(--purple);border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;color:var(--ink);}
+.readout b{color:var(--purple);}
+.readout .qinline{font-weight:800;}
+.diverge{font-size:.72rem;color:#8a6400;background:rgba(184,134,11,.08);border:1px dashed rgba(184,134,11,.4);border-radius:9px;padding:10px 12px;margin-top:10px;line-height:1.5;}
+.diverge b{color:#8a6400;}
+.subttl{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;}
+/* caveats */
+.caveats{background:linear-gradient(180deg,#fff 0%,var(--sand) 100%);border:1px solid var(--line);border-left:4px solid var(--gold);}
+.caveats .card-t{display:flex;align-items:center;gap:8px;}
+.cav-list{list-style:none;display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+.cav-list li{font-size:.8rem;line-height:1.55;color:var(--ink);padding-left:22px;position:relative;}
+.cav-list li::before{content:"▸";position:absolute;left:2px;top:0;color:var(--gold);font-size:.8rem;}
+.cav-list li b{color:var(--purple);}
+.sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:14px;padding-top:6px;}
+.foot{font-size:.7rem;color:var(--muted);line-height:1.6;padding:12px 4px 0;border-top:1px solid var(--line);margin-top:8px;}
+.foot b{color:var(--ink);}
+.foot a{color:var(--purple);font-weight:700;text-decoration:none;}
+.foot a:hover{text-decoration:underline;}
+@media(max-width:1080px){.krow{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}.bar-row{grid-template-columns:160px 1fr 160px;}.chart-wrap.quad{height:420px;}}
+@media(max-width:620px){.main{padding:16px;}.masthead{padding:18px 16px;}.krow{grid-template-columns:1fr;}.bar-row{grid-template-columns:130px 1fr;}.bar-val{grid-column:2/-1;text-align:left;justify-content:flex-start;}.mh-ctrls{width:100%;}.qlegend{grid-template-columns:1fr;}}
+@media print{
+  .mh-ctrls,.btn-csv{display:none!important;}
+  .card,.kpi,.caveats{break-inside:avoid;box-shadow:none;}
+  body{background:#fff;}
+  .masthead{background:var(--purple)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="mh-top">
+    <div>
+      <h1 class="mh-title">Demand &amp; Supply Opportunity Map</h1>
+      <div class="mh-sub">For each discipline: is domestic student <b>demand</b> momentum rising or falling, is CRICOS course <b>supply</b> momentum expanding or contracting &mdash; and therefore is the field <b style="color:#8FE3B8">Open</b>, <b style="color:#FF8A85">Hot</b>, <b style="color:#F0C778">Crowded</b> or <b style="color:#9FC0D8">Fading</b>? Overlaid with where ACU&rsquo;s own portfolio sits.</div>
+      <div class="mh-caveat">&#9888;&#65039;<span><b>Two different markets.</b> Demand is <b>domestic</b> student appetite (application share); supply is provider behaviour in the <b>international-student</b> CRICOS register. Related momentum proxies &mdash; read the map <b>directionally</b>, never as a literal demand/supply ratio.</span></div>
+    </div>
+    <div class="mh-ctrls">
+      <div class="seg-group">
+        <label>Supply lens</label>
+        <div class="seg" id="seg-lens">
+          <button data-v="he" class="on">Higher-ed degrees</button>
+          <button data-v="all">All CRICOS levels</button>
+        </div>
+      </div>
+      <div class="seg-group">
+        <label>Demand horizon</label>
+        <div class="seg" id="seg-horizon">
+          <button data-v="5" class="on">5-year</button>
+          <button data-v="8">8-year</button>
+        </div>
+      </div>
+      <button class="btn-csv" id="btn-csv">&#8681; Export CSV</button>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <!-- KPI row -->
+  <div class="krow" id="kpis"></div>
+
+  <!-- 3. Quadrant scatter (centrepiece) -->
+  <div class="sec-eyebrow">The opportunity map</div>
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t">Demand momentum &times; supply momentum, by discipline</div>
+        <div class="card-s" id="quad-sub">Each bubble is one ASCED broad field. Horizontal = domestic demand momentum; vertical = CRICOS supply momentum (axis inverted so <b>supply contracting points up</b>). Bubble size = ACU commencing enrolments; hollow = ACU does not offer the field.</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="chart-wrap quad"><canvas id="ch-quad"></canvas></div>
+      <div>
+        <div class="subttl">The four quadrants</div>
+        <div class="qlegend">
+          <div class="qcell OPEN"><div class="qh"><span class="qdot" style="background:var(--q-open)"></span>Open</div><div class="qd">Demand rising, supply contracting &mdash; an opportunity gap. <b>Top-right.</b></div></div>
+          <div class="qcell HOT"><div class="qh"><span class="qdot" style="background:var(--q-hot)"></span>Hot</div><div class="qd">Both rising &mdash; move fast, expect competition. <b>Bottom-right.</b></div></div>
+          <div class="qcell FADING"><div class="qh"><span class="qdot" style="background:var(--q-fading)"></span>Fading</div><div class="qd">Both declining. <b>Top-left.</b></div></div>
+          <div class="qcell CROWDED"><div class="qh"><span class="qdot" style="background:var(--q-crowded)"></span>Crowded</div><div class="qd">Demand cooling while supply piles in &mdash; caution. <b>Bottom-left.</b></div></div>
+        </div>
+        <div class="qaxis-note">Reading the map: <b>right = students want it more</b>; <b>up = providers are cutting courses</b>. So the honest opportunity corner &mdash; demand up <i>and</i> supply down &mdash; is the <b>top-right (Open)</b>. The vertical axis is deliberately inverted to put it there.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Opportunity ranking -->
+  <div class="sec-eyebrow">Ranked</div>
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t">Opportunity ranking</div>
+        <div class="card-s">Fields scored by demand momentum minus a normalised supply momentum, so <b>demand-rising / supply-contracting</b> fields rise to the top. Both inputs are normalised to a comparable scale (the two markets are not directly divisible). Bar colour = quadrant; <span style="color:var(--red);font-weight:700">&#9679;</span> marks fields ACU already offers.</div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--q-open)"></span> Open</span>
+      <span><span class="swatch" style="background:var(--q-hot)"></span> Hot</span>
+      <span><span class="swatch" style="background:var(--q-crowded)"></span> Crowded</span>
+      <span><span class="swatch" style="background:var(--q-fading)"></span> Fading</span>
+      <span><span class="swatch" style="background:var(--red)"></span> ACU present</span>
+    </div>
+    <div class="bars" id="bars-rank"></div>
+  </div>
+
+  <!-- 5. Field detail -->
+  <div class="sec-eyebrow">Field detail</div>
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t" id="fd-title">Field detail</div>
+        <div class="card-s">Demand-share trend (2010&ndash;2024), CRICOS supply detail at both lenses, and ACU commencement trend for one field.</div>
+      </div>
+      <div class="seg-group" style="align-items:flex-end">
+        <label style="color:var(--muted);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Field</label>
+        <select class="card-sel" id="fd-sel"></select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="subttl">Domestic application share, 2010&ndash;2024</div>
+        <div class="chart-wrap tall"><canvas id="ch-demand"></canvas></div>
+      </div>
+      <div>
+        <div class="subttl" id="fd-supply-ttl">CRICOS supply, 2025 &rarr; 2026</div>
+        <div class="strip" id="fd-supply"></div>
+        <div class="diverge" id="fd-diverge" style="display:none"></div>
+        <div class="subttl" style="margin-top:16px">ACU commencing enrolments</div>
+        <div class="chart-wrap" style="height:150px"><canvas id="ch-acu"></canvas></div>
+      </div>
+    </div>
+    <div style="margin-top:18px"><div class="readout" id="fd-readout"></div></div>
+  </div>
+
+  <!-- 6. ACU alignment -->
+  <div class="sec-eyebrow">Portfolio overlay</div>
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t">Where ACU&rsquo;s portfolio sits on the map</div>
+        <div class="card-s" id="acu-sub">ACU&rsquo;s fields ranked by commencing enrolment, tagged with the quadrant each currently sits in. Fields ACU does not offer are shown for contrast.</div>
+      </div>
+    </div>
+    <div class="bars" id="bars-acu"></div>
+    <div class="readout" id="acu-readout" style="margin-top:16px"></div>
+  </div>
+
+  <!-- 7. Caveats -->
+  <div class="card caveats">
+    <div class="card-t">&#9888;&#65039; Read the map with these caveats</div>
+    <ul class="cav-list">
+      <li><b>Two different markets.</b> Demand is <b>domestic university applications</b>; supply is the <b>international-student CRICOS register</b>. They are related proxies for a field&rsquo;s momentum but not the same market &mdash; read the map directionally, never as a literal demand-over-supply ratio.</li>
+      <li><b>All-levels CRICOS is VET-dominated.</b> The all-levels count is dominated by VET / private-provider churn, so the <b>higher-education lens (Bachelor and above)</b> is the university read. The two can diverge sharply &mdash; e.g. Architecture &amp; Building: <b>+246 all-levels but &minus;14 at degree level</b>.</li>
+      <li><b>Different time bases.</b> Supply is one-year momentum (a 2025&rarr;2026 snapshot pair); demand is a multi-year share trend. And demand is a <b>share</b> of applications &mdash; it can rise even as total applications fall.</li>
+      <li><b>Join key.</b> Both sources are joined on the <b>ASCED broad field of education</b> &mdash; native to each, so no crosswalk is needed, but it is coarse (10 fields).</li>
+      <li><b>ACU figure</b> is domestic <b>commencing enrolments</b> by field &mdash; a portfolio-presence proxy, not a full load or revenue measure.</li>
+    </ul>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var D = window.DEMANDSUPPLY;
+  var HAS_DC = (typeof DashCommons !== 'undefined');
+
+  // ---- helpers ----
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmtInt(n){ return Number(n||0).toLocaleString('en-AU'); }
+  function signed(n,dp){ dp=(dp==null?2:dp); var v=Number(n); return (v>=0?'+':'−')+Math.abs(v).toFixed(dp); }
+  function signedInt(n){ var v=Number(n); return (v>=0?'+':'−')+Math.abs(v); }
+
+  var FIELDS = D.fields.slice();
+  var YEARS_D = D.years_demand.slice();
+
+  // Quadrant colours
+  var QCOL = { OPEN:'#2E7D5B', HOT:'#F2120C', CROWDED:'#B8860B', FADING:'#3E6D8E' };
+  var QSHADE = { OPEN:'rgba(46,125,91,.06)', HOT:'rgba(242,18,12,.05)', CROWDED:'rgba(184,134,11,.06)', FADING:'rgba(62,109,142,.05)' };
+
+  // ---- derived accessors ----
+  function demOf(f){ return D.demand[f][state.horizon==='8'?'d8yr':'d5yr']; }
+  function supOf(f){ return D.supply[f][state.lens==='all'?'allNet':'heNet']; }
+  function acuOf(f){ var a=D.acu[f]; return a?(a.latest||0):0; }
+  function quadOf(dem,sup){
+    if(dem>=0 && sup<0) return 'OPEN';
+    if(dem>=0 && sup>=0) return 'HOT';
+    if(dem<0 && sup>=0) return 'CROWDED';
+    return 'FADING';
+  }
+  function quadFor(f){ return quadOf(demOf(f), supOf(f)); }
+
+  // opportunity score: normalise both axes to comparable [-1,1], demand minus supply.
+  function oppScores(){
+    var maxD=0,maxS=0;
+    FIELDS.forEach(function(f){ maxD=Math.max(maxD,Math.abs(demOf(f))); maxS=Math.max(maxS,Math.abs(supOf(f))); });
+    maxD=maxD||1; maxS=maxS||1;
+    return FIELDS.map(function(f){
+      var nd=demOf(f)/maxD, ns=supOf(f)/maxS;
+      return { field:f, score:nd-ns, dem:demOf(f), sup:supOf(f), acu:acuOf(f), quad:quadFor(f) };
+    }).sort(function(a,b){ return b.score-a.score; });
+  }
+
+  // ---- app state ----
+  var state = { field:'Health', lens:'he', horizon:'5' };
+
+  // ================= URL state =================
+  function readUrl(){
+    if(!HAS_DC) return {};
+    return {
+      field: DashCommons.state.get('field', null),
+      lens: DashCommons.state.get('lens', null),
+      horizon: DashCommons.state.get('horizon', null)
+    };
+  }
+  function writeUrl(){
+    if(!HAS_DC) return;
+    DashCommons.state.set('field', state.field!=='Health' ? state.field : null);
+    DashCommons.state.set('lens', state.lens!=='he' ? state.lens : null);
+    DashCommons.state.set('horizon', state.horizon!=='5' ? state.horizon : null);
+  }
+
+  // ================= KPI cards =================
+  function renderKpis(){
+    var box=document.getElementById('kpis');
+    var horLbl = state.horizon==='8'?'8-yr':'5-yr';
+    var lensLbl = state.lens==='all'?'all CRICOS levels':'higher-ed degrees';
+
+    // 1. Clearest OPEN field (top opportunity score that is OPEN)
+    var scored = oppScores();
+    var openTop = scored.filter(function(s){return s.quad==='OPEN';})[0] || scored[0];
+
+    // 2. Clearest CROWDED/FADING: field with fastest-falling demand
+    var falling = FIELDS.map(function(f){ return {field:f, dem:demOf(f), sup:supOf(f), quad:quadFor(f)}; })
+      .filter(function(s){return s.dem<0;})
+      .sort(function(a,b){ return a.dem-b.dem; });
+    var fall = falling[0];
+
+    // 3. ACU's largest field + quadrant
+    var acuTop = FIELDS.map(function(f){return {field:f, acu:acuOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)};})
+      .sort(function(a,b){return b.acu-a.acu;})[0];
+
+    // 4. Rising demand, ACU absent (ACU latest 0) — strongest rise
+    var absent = FIELDS.map(function(f){return {field:f, acu:acuOf(f), dem:demOf(f), sup:supOf(f), quad:quadFor(f)};})
+      .filter(function(s){return s.acu===0 && s.dem>0;})
+      .sort(function(a,b){return b.dem-a.dem;})[0];
+
+    var cards = [];
+    cards.push(kcard('k-open','Clearest OPEN opportunity',
+      esc(openTop.field),
+      'Demand '+signed(openTop.dem)+'pp/'+horLbl+', supply '+signedInt(openTop.sup)+' ('+lensLbl+') &mdash; students want it, provider supply not keeping up.',
+      openTop.quad));
+    cards.push(kcard('k-'+fall.quad.toLowerCase(),'Demand falling fastest',
+      esc(fall.field),
+      'Demand '+signed(fall.dem)+'pp/'+horLbl+', supply '+signedInt(fall.sup)+' ('+lensLbl+').',
+      fall.quad));
+    cards.push(kcard('k-'+acuTop.quad.toLowerCase(),'ACU&rsquo;s largest field',
+      fmtInt(acuTop.acu),
+      esc(acuTop.field)+' &mdash; '+fmtInt(acuTop.acu)+' commencing. Demand '+signed(acuTop.dem)+'pp, supply '+signedInt(acuTop.sup)+'.',
+      acuTop.quad));
+    if(absent){
+      cards.push(kcard('k-'+absent.quad.toLowerCase(),'Rising demand, ACU absent',
+        esc(absent.field),
+        'Demand '+signed(absent.dem)+'pp/'+horLbl+' (a strong rise) but ACU has <b>0</b> commencing here. Supply '+signedInt(absent.sup)+'.',
+        absent.quad));
+    } else {
+      cards.push(kcard('','Rising demand, ACU absent','&mdash;','No rising-demand field is wholly absent from ACU under this view.',null));
+    }
+    box.innerHTML = cards.join('');
+  }
+  function kcard(cls,lbl,val,sub,quad){
+    return '<div class="kpi '+cls+'"><div class="klbl">'+lbl+'</div>'
+      + '<div class="kval">'+val+'</div>'
+      + (sub?'<div class="ksub">'+sub+'</div>':'')
+      + (quad?'<div><span class="qbadge '+quad+'">'+quad+'</span></div>':'')
+      + '</div>';
+  }
+
+  // ================= Quadrant scatter =================
+  var chQuad=null;
+  function rOf(acu){ // radius by enrolment (sqrt/area scale)
+    if(!acu) return 7;
+    var maxA=4607;
+    return 9 + Math.sqrt(acu)/Math.sqrt(maxA)*33;
+  }
+  // custom plugin: quadrant shading, zero lines, corner labels
+  var quadPlugin = {
+    id:'quadBg',
+    beforeDatasetsDraw: function(chart){
+      var ctx=chart.ctx, ca=chart.chartArea;
+      var sx=chart.scales.x, sy=chart.scales.y;
+      if(!ca) return;
+      var zx=sx.getPixelForValue(0), zy=sy.getPixelForValue(0);
+      zx=Math.max(ca.left,Math.min(ca.right,zx));
+      zy=Math.max(ca.top,Math.min(ca.bottom,zy));
+      ctx.save();
+      // shade quadrants. y is REVERSED: supply<0 (contracting) => top; supply>0 => bottom.
+      // top-left FADING, top-right OPEN, bottom-left CROWDED, bottom-right HOT
+      function rect(x0,y0,x1,y1,col){ ctx.fillStyle=col; ctx.fillRect(x0,y0,x1-x0,y1-y0); }
+      rect(ca.left,ca.top,zx,zy,QSHADE.FADING);
+      rect(zx,ca.top,ca.right,zy,QSHADE.OPEN);
+      rect(ca.left,zy,zx,ca.bottom,QSHADE.CROWDED);
+      rect(zx,zy,ca.right,ca.bottom,QSHADE.HOT);
+      // zero axes
+      ctx.strokeStyle='rgba(30,27,24,.35)'; ctx.lineWidth=1.4; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(zx,ca.top); ctx.lineTo(zx,ca.bottom); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ca.left,zy); ctx.lineTo(ca.right,zy); ctx.stroke();
+      ctx.setLineDash([]);
+      // corner labels
+      ctx.font='800 13px Manrope, Arial, sans-serif';
+      ctx.textBaseline='top';
+      function lbl(text,sub,x,y,col,align){
+        ctx.textAlign=align;
+        ctx.fillStyle=col;
+        ctx.font='800 14px Manrope, Arial, sans-serif';
+        ctx.fillText(text,x,y);
+        ctx.fillStyle='rgba(92,86,81,.85)';
+        ctx.font='600 9.5px Arial, sans-serif';
+        ctx.fillText(sub,x,y+16);
+      }
+      var pad=10;
+      lbl('OPEN','demand ↑ · supply ↓', ca.right-pad, ca.top+pad, QCOL.OPEN, 'right');
+      lbl('FADING','demand ↓ · supply ↓', ca.left+pad, ca.top+pad, QCOL.FADING, 'left');
+      lbl('HOT','demand ↑ · supply ↑', ca.right-pad, ca.bottom-32, QCOL.HOT, 'right');
+      lbl('CROWDED','demand ↓ · supply ↑', ca.left+pad, ca.bottom-32, QCOL.CROWDED, 'left');
+      ctx.restore();
+    }
+  };
+
+  function renderQuad(){
+    var maxAbsD=0, maxAbsS=0;
+    FIELDS.forEach(function(f){ maxAbsD=Math.max(maxAbsD,Math.abs(demOf(f))); maxAbsS=Math.max(maxAbsS,Math.abs(supOf(f))); });
+    var padD=maxAbsD*1.18||1, padS=maxAbsS*1.18||1;
+
+    var pts = FIELDS.map(function(f){
+      var q=quadFor(f), acu=acuOf(f);
+      return { x:demOf(f), y:supOf(f), r:rOf(acu), field:f, quad:q, acu:acu,
+        bg: acu>0 ? QCOL[q] : 'rgba(255,255,255,0)',
+        bd: QCOL[q] };
+    });
+    var ds = {
+      label:'Fields',
+      data:pts,
+      borderWidth: pts.map(function(p){ return p.acu>0?1.5:2; }),
+      hoverBorderWidth:2.5,
+      // fill: translucent for present fields, transparent (hollow) for ACU-absent
+      backgroundColor: pts.map(function(p){ return p.acu>0 ? hexA(p.bd,0.72) : 'rgba(255,255,255,0)'; }),
+      borderColor: pts.map(function(p){ return p.acu>0 ? p.bd : hexA(p.bd,0.85); })
+    };
+
+    var ctx=document.getElementById('ch-quad').getContext('2d');
+    if(chQuad) chQuad.destroy();
+    chQuad=new Chart(ctx,{
+      type:'bubble',
+      data:{ datasets:[ds] },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        layout:{padding:{top:6,right:6,bottom:2,left:2}},
+        plugins:{
+          legend:{display:false},
+          tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:12, displayColors:false,
+            callbacks:{
+              title:function(it){ return it[0].raw.field; },
+              label:function(c){ var p=c.raw;
+                return [
+                  'Quadrant: '+p.quad,
+                  'Demand momentum: '+signed(p.x)+'pp / '+(state.horizon==='8'?'8':'5')+'-yr',
+                  'Supply momentum: '+signedInt(p.y)+' net ('+(state.lens==='all'?'all levels':'higher-ed')+')',
+                  'ACU commencing: '+(p.acu>0?fmtInt(p.acu):'0 (not offered)')
+                ];
+              }
+            }
+          }
+        },
+        scales:{
+          x:{ min:-padD, max:padD, grid:{color:'rgba(30,27,24,.05)'},
+              title:{display:true, text:'Demand momentum  → students want it more  (Δ domestic application share, pp)', color:'#5C5651', font:{size:11,weight:'700'}},
+              ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return signed(v,1);}} },
+          y:{ min:-padS, max:padS, reverse:true, grid:{color:'rgba(30,27,24,.05)'},
+              title:{display:true, text:'Supply momentum  ↑ providers cutting courses  (net CRICOS course change)', color:'#5C5651', font:{size:11,weight:'700'}},
+              ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return signedInt(v);}} }
+        }
+      },
+      plugins:[quadPlugin]
+    });
+    document.getElementById('quad-sub').innerHTML='Each bubble is one ASCED broad field. Horizontal = domestic demand momentum ('
+      +(state.horizon==='8'?'8':'5')+'-year); vertical = CRICOS supply momentum ('+(state.lens==='all'?'all levels':'higher-ed degrees')
+      +'), axis inverted so <b>supply contracting points up</b>. Bubble size = ACU commencing enrolments; hollow = ACU does not offer the field.';
+  }
+  function hexA(hex,a){
+    var h=hex.replace('#',''); var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+    return 'rgba('+r+','+g+','+b+','+a+')';
+  }
+
+  // ================= Opportunity ranking =================
+  function renderRank(){
+    var scored = oppScores();
+    var maxAbs = Math.max.apply(null, scored.map(function(s){return Math.abs(s.score);}))||1;
+    var host=document.getElementById('bars-rank');
+    var horLbl=(state.horizon==='8'?'8':'5')+'yr';
+    host.innerHTML = scored.map(function(s){
+      var w = Math.abs(s.score)/maxAbs*50; // half-width; zero at centre
+      var left = s.score>=0 ? 50 : (50 - w);
+      var isAcu = s.acu>0;
+      return '<div class="bar-row">'
+        + '<div class="bar-lbl" title="'+esc(s.field)+'">'+(isAcu?'<span class="acu-dot"></span>':'')+esc(s.field)+'</div>'
+        + '<div class="bar-track"><div class="zero" style="left:50%"></div>'
+        +   '<div class="bar-fill '+s.quad+'" style="left:'+left.toFixed(2)+'%;width:'+Math.max(w,0.6).toFixed(2)+'%"></div>'
+        + '</div>'
+        + '<div class="bar-val"><span class="qtag '+s.quad+'">'+s.quad+'</span> <b>'+signed(s.dem,1)+'</b>pp&middot;'+signedInt(s.sup)+'</div>'
+        + '</div>';
+    }).join('');
+  }
+
+  // ================= Field detail =================
+  var chDemand=null, chAcu=null;
+  function buildFieldSel(){
+    var sel=document.getElementById('fd-sel');
+    sel.innerHTML=FIELDS.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>';}).join('');
+    sel.value=state.field;
+    sel.onchange=function(){ state.field=sel.value; writeUrl(); renderField(); };
+  }
+  function renderField(){
+    var f=state.field, dd=D.demand[f], sp=D.supply[f], ac=D.acu[f];
+    var q=quadFor(f), dem=demOf(f), sup=supOf(f);
+    document.getElementById('fd-title').innerHTML='Field detail &mdash; '+esc(f)
+      + ' <span class="qtag '+q+'" style="vertical-align:middle;margin-left:4px">'+q+'</span>';
+
+    // demand line
+    var ctx=document.getElementById('ch-demand').getContext('2d');
+    if(chDemand) chDemand.destroy();
+    chDemand=new Chart(ctx,{
+      type:'line',
+      data:{ labels:YEARS_D.map(String),
+        datasets:[{ label:'Application share', data:dd.app_share,
+          borderColor:'#3C1053', backgroundColor:'rgba(60,16,83,.08)', borderWidth:2.6, fill:true, tension:.3,
+          pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'#fff', pointBorderColor:'#3C1053', pointBorderWidth:2 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{ legend:{display:false},
+          tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:11, displayColors:false,
+            callbacks:{ label:function(c){ var i=c.dataIndex; return [' Share: '+c.parsed.y.toFixed(2)+'%', ' Applications: '+fmtInt(dd.applications[i])]; } } } },
+        scales:{
+          x:{ grid:{display:false}, ticks:{color:'#5C5651', font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:8} },
+          y:{ grid:{color:'rgba(30,27,24,.07)'}, ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return v+'%';}} } }
+      }
+    });
+
+    // supply strip (both lenses)
+    var host=document.getElementById('fd-supply');
+    host.innerHTML =
+      supCell('Higher-ed net', sp.heNet, sp.heNew, sp.heRem)
+      + supCell('All-levels net', sp.allNet, sp.allNew, sp.allRem);
+    // divergence note
+    var dv=document.getElementById('fd-diverge');
+    if((sp.heNet>=0)!==(sp.allNet>=0)){
+      dv.style.display='block';
+      dv.innerHTML='<b>Lenses diverge.</b> Higher-ed degrees moved '+signedInt(sp.heNet)+' while all CRICOS levels moved '+signedInt(sp.allNet)
+        +' &mdash; the all-levels figure is VET/private-provider churn, so the degree-level read is the university signal here.';
+    } else { dv.style.display='none'; }
+
+    // ACU trend
+    var years = ac ? Object.keys(ac.series).map(Number).sort(function(a,b){return a-b;}) : [];
+    var vals = years.map(function(y){ return ac.series[String(y)]; });
+    var actx=document.getElementById('ch-acu').getContext('2d');
+    if(chAcu) chAcu.destroy();
+    chAcu=new Chart(actx,{
+      type:'line',
+      data:{ labels:years.map(String), datasets:[{ label:'ACU commencing', data:vals,
+        borderColor:'#F2120C', backgroundColor:'rgba(242,18,12,.08)', borderWidth:2.4, fill:true, tension:.25,
+        pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'#fff', pointBorderColor:'#F2120C', pointBorderWidth:2 }] },
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false},
+          tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:10, displayColors:false,
+            callbacks:{ label:function(c){ return ' '+fmtInt(c.parsed.y)+' commencing'; } } } },
+        scales:{ x:{ grid:{display:false}, ticks:{color:'#5C5651', font:{size:9}} },
+          y:{ beginAtZero:true, grid:{color:'rgba(30,27,24,.07)'}, ticks:{color:'#5C5651', font:{size:9}, maxTicksLimit:4} } }
+      }
+    });
+
+    // plain-English readout
+    var acuLatest = ac?ac.latest:0, acuYr = ac?ac.latest_year:'';
+    var demWord = dem>=0 ? 'rising' : 'falling';
+    var supWord = sup<0 ? 'contracting' : (sup>0?'expanding':'flat');
+    var qDesc = { OPEN:'an opportunity gap &mdash; demand up, provider supply pulling back',
+                  HOT:'a hot, competitive field &mdash; both demand and supply climbing, so move fast',
+                  CROWDED:'crowded &mdash; providers piling in even as domestic interest cools',
+                  FADING:'fading &mdash; both demand and supply in retreat' };
+    var acuClause = acuLatest>0
+      ? 'ACU offers it with <b>'+fmtInt(acuLatest)+'</b> commencing ('+acuYr+')'
+      : 'ACU does <b>not</b> currently offer it (0 commencing)';
+    document.getElementById('fd-readout').innerHTML =
+      '<b>'+esc(f)+':</b> domestic demand '+demWord+' ('+signed(dem)+'pp / '+(state.horizon==='8'?'8':'5')+'-yr share change), '
+      + (state.lens==='all'?'all-levels':'degree-level')+' CRICOS supply '+supWord+' ('+signedInt(sup)+' net) &mdash; '
+      + '<span class="qinline" style="color:'+QCOL[q]+'">'+qDesc[q]+'</span>. '+acuClause+'.';
+    document.getElementById('fd-sel').value=f;
+  }
+  function supCell(lbl,net,nw,rm){
+    var cls = net<0?'neg':(net>0?'pos':'');
+    return '<div class="strip-c '+cls+'"><div class="strip-y">'+lbl+'</div>'
+      +'<div class="strip-v">'+signedInt(net)+'</div>'
+      +'<div class="strip-n">'+nw+' new &middot; '+rm+' removed</div></div>';
+  }
+
+  // ================= ACU alignment =================
+  function renderAcuAlign(){
+    var rows=FIELDS.map(function(f){ return {field:f, acu:acuOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)}; })
+      .sort(function(a,b){ return b.acu-a.acu; });
+    var maxA=Math.max.apply(null, rows.map(function(r){return r.acu;}))||1;
+    var host=document.getElementById('bars-acu');
+    host.innerHTML=rows.map(function(r){
+      var w = r.acu>0 ? Math.max(r.acu/maxA*100,1.5) : 0;
+      var present=r.acu>0;
+      return '<div class="bar-row">'
+        + '<div class="bar-lbl" title="'+esc(r.field)+'">'+(present?'<span class="acu-dot"></span>':'')+esc(r.field)+'</div>'
+        + '<div class="bar-track">'
+        +   (present? '<div class="bar-fill '+r.quad+'" style="left:0;width:'+w.toFixed(2)+'%"></div>'
+                    : '<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:.66rem;color:var(--muted);font-style:italic;padding-left:4px">not offered</div>')
+        + '</div>'
+        + '<div class="bar-val"><span class="qtag '+r.quad+'">'+r.quad+'</span> <b>'+(present?fmtInt(r.acu):'0')+'</b></div>'
+        + '</div>';
+    }).join('');
+    // narrative
+    var byQ={}; rows.forEach(function(r){ if(r.acu>0){ (byQ[r.quad]=byQ[r.quad]||[]).push(r.field); } });
+    var absentHot=rows.filter(function(r){return r.acu===0 && r.quad==='HOT';}).map(function(r){return r.field;});
+    var parts=[];
+    if(byQ.OPEN) parts.push('anchored in <b style="color:'+QCOL.OPEN+'">Open</b> ('+byQ.OPEN.join(', ')+')');
+    if(byQ.HOT) parts.push('active in <b style="color:'+QCOL.HOT+'">Hot</b> ('+byQ.HOT.join(', ')+')');
+    if(byQ.FADING) parts.push('exposed to <b style="color:'+QCOL.FADING+'">Fading</b> ('+byQ.FADING.join(', ')+')');
+    if(byQ.CROWDED) parts.push('sitting in <b style="color:'+QCOL.CROWDED+'">Crowded</b> ('+byQ.CROWDED.join(', ')+')');
+    var absClause = absentHot.length ? ' It is <b>absent</b> from a Hot field ('+absentHot.join(', ')+') where demand is rising.' : '';
+    document.getElementById('acu-readout').innerHTML='Under the current lens/horizon, ACU&rsquo;s portfolio is '+parts.join('; ')+'.'+absClause;
+  }
+
+  // ================= CSV export =================
+  function exportCsv(){
+    var header=['field','demand_d5yr_pp','demand_d8yr_pp','share_latest_pct','heNet','allNet','acu_commencing_latest','quadrant_current'];
+    var rows=[header];
+    FIELDS.forEach(function(f){
+      var dd=D.demand[f], sp=D.supply[f];
+      rows.push([f, dd.d5yr, dd.d8yr, dd.share_latest, sp.heNet, sp.allNet, acuOf(f), quadFor(f)]);
+    });
+    var csv=rows.map(function(r){ return r.map(function(v){ var s=String(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }).join('\n');
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download='demand-supply-map_'+state.lens+'_'+state.horizon+'yr.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ================= render orchestration =================
+  function renderReactive(){ renderKpis(); renderQuad(); renderRank(); renderField(); renderAcuAlign(); }
+  function renderStatic(){
+    document.getElementById('foot').innerHTML =
+      '<b>Sources.</b> Demand &amp; ACU: '+esc(D.meta.demand_source)+' '+esc(D.meta.acu_source)+' '
+      + 'Supply: '+esc(D.meta.supply_source)+' '
+      + 'Generated '+esc(D.generated)+'. Part of Phil&rsquo;s dashboard suite &mdash; see the '
+      + '<a href="https://pdparker.github.io/student-interest-signals/" target="_blank" rel="noopener">Student Interest Signals</a> (demand) and '
+      + '<a href="https://pdparker.github.io/cricos-dashboard/" target="_blank" rel="noopener">CRICOS course</a> (supply) dashboards for the underlying series.';
+  }
+
+  // ================= toggles =================
+  function wireSeg(id, key, apply){
+    var wrap=document.getElementById(id);
+    wrap.querySelectorAll('button').forEach(function(b){
+      b.onclick=function(){
+        state[key]=b.dataset.v;
+        wrap.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+        writeUrl(); apply();
+      };
+    });
+  }
+  function setSeg(id, val){
+    document.getElementById(id).querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===val); });
+  }
+
+  // ================= init =================
+  function boot(){
+    document.getElementById('btn-csv').onclick=exportCsv;
+    wireSeg('seg-lens','lens', renderReactive);
+    wireSeg('seg-horizon','horizon', renderReactive);
+    buildFieldSel();
+
+    var u=readUrl();
+    if(u.lens==='he'||u.lens==='all') state.lens=u.lens;
+    if(u.horizon==='5'||u.horizon==='8') state.horizon=u.horizon;
+    if(u.field && FIELDS.indexOf(u.field)!==-1) state.field=u.field;
+
+    setSeg('seg-lens', state.lens);
+    setSeg('seg-horizon', state.horizon);
+    document.getElementById('fd-sel').value=state.field;
+
+    renderStatic();
+    renderReactive();
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
+</body>
+</html>
