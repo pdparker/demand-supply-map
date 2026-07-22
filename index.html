@@ -29,6 +29,9 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 .mh-sub{font-size:.82rem;color:rgba(255,255,255,.78);margin-top:8px;max-width:720px;line-height:1.55;}
 .mh-caveat{font-size:.74rem;color:#FFD9A0;margin-top:9px;max-width:720px;line-height:1.5;display:flex;gap:7px;align-items:flex-start;}
 .mh-caveat b{color:#fff;font-weight:700;}
+.mh-scope{font-size:.72rem;color:#EAD9FF;margin-top:10px;max-width:820px;line-height:1.5;display:flex;gap:7px;align-items:flex-start;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px 11px;}
+.mh-scope b{color:#fff;font-weight:700;}
+.mh-scope .pill{font-size:.6rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:rgba(255,217,160,.16);color:#FFD9A0;border-radius:20px;padding:2px 9px;white-space:nowrap;flex:none;}
 .mh-ctrls{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;}
 .seg-group{display:flex;flex-direction:column;gap:5px;}
 .seg-group>label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.55);}
@@ -138,8 +141,17 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
       <h1 class="mh-title">Demand &amp; Supply Opportunity Map</h1>
       <div class="mh-sub">For each discipline: is domestic student <b>demand</b> momentum rising or falling, is CRICOS course <b>supply</b> momentum expanding or contracting &mdash; and therefore is the field <b style="color:#8FE3B8">Open</b>, <b style="color:#FF8A85">Hot</b>, <b style="color:#F0C778">Crowded</b> or <b style="color:#9FC0D8">Fading</b>? Overlaid with where ACU&rsquo;s own portfolio sits.</div>
       <div class="mh-caveat">&#9888;&#65039;<span><b>Two different markets.</b> Demand is <b>domestic</b> student appetite (application share); supply is provider behaviour in the <b>international-student</b> CRICOS register. Related momentum proxies &mdash; read the map <b>directionally</b>, never as a literal demand/supply ratio.</span></div>
+      <div class="mh-scope" id="mh-scope"></div>
     </div>
     <div class="mh-ctrls">
+      <div class="seg-group">
+        <label>Granularity</label>
+        <div class="seg" id="seg-grain">
+          <button data-v="broad" class="on">Broad fields</button>
+          <button data-v="health">Health sub-fields</button>
+          <button data-v="agriculture">Agriculture sub-fields</button>
+        </div>
+      </div>
       <div class="seg-group">
         <label>Supply lens</label>
         <div class="seg" id="seg-lens">
@@ -228,8 +240,11 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
         <div class="subttl" id="fd-supply-ttl">CRICOS supply, 2025 &rarr; 2026</div>
         <div class="strip" id="fd-supply"></div>
         <div class="diverge" id="fd-diverge" style="display:none"></div>
-        <div class="subttl" style="margin-top:16px">ACU commencing enrolments</div>
-        <div class="chart-wrap" style="height:150px"><canvas id="ch-acu"></canvas></div>
+        <div id="fd-acu-wrap">
+          <div class="subttl" style="margin-top:16px">ACU commencing enrolments</div>
+          <div class="chart-wrap" style="height:150px"><canvas id="ch-acu"></canvas></div>
+        </div>
+        <div class="qaxis-note" id="fd-acu-note" style="display:none;margin-top:16px">No ACU overlay at 4-digit &mdash; <b>ACU enrolments are broad-field only</b>. Switch to Broad fields to see ACU commencements.</div>
       </div>
     </div>
     <div style="margin-top:18px"><div class="readout" id="fd-readout"></div></div>
@@ -257,6 +272,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
       <li><b>Different time bases.</b> Supply is one-year momentum (a 2025&rarr;2026 snapshot pair); demand is a multi-year share trend. And demand is a <b>share</b> of applications &mdash; it can rise even as total applications fall.</li>
       <li><b>Join key.</b> Both sources are joined on the <b>ASCED broad field of education</b> &mdash; native to each, so no crosswalk is needed, but it is coarse (10 fields).</li>
       <li><b>ACU figure</b> is domestic <b>commencing enrolments</b> by field &mdash; a portfolio-presence proxy, not a full load or revenue measure.</li>
+      <li><b>4-digit sub-fields are Health &amp; Agriculture only.</b> The DoE demand source publishes application data at 4-digit for just these two broad fields, so the granularity drill-down is limited to them. At 4-digit there is <b>no ACU overlay</b> &mdash; ACU enrolments are broad-field only, so sub-field bubbles are uniform.</li>
     </ul>
   </div>
 
@@ -278,15 +294,35 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   var FIELDS = D.fields.slice();
   var YEARS_D = D.years_demand.slice();
+  var NARROW = D.narrow || {};
 
   // Quadrant colours
   var QCOL = { OPEN:'#2E7D5B', HOT:'#F2120C', CROWDED:'#B8860B', FADING:'#3E6D8E' };
   var QSHADE = { OPEN:'rgba(46,125,91,.06)', HOT:'rgba(242,18,12,.05)', CROWDED:'rgba(184,134,11,.06)', FADING:'rgba(62,109,142,.05)' };
 
+  // ---- granularity (grain) data view ----
+  // grain: 'broad' (10 ASCED fields, ACU overlay) | 'health' | 'agriculture' (4-digit sub-fields, no ACU).
+  var GRAIN_PARENT = { health:'Health', agriculture:'Agriculture, Environmental and Related Studies' };
+  var GRAIN_LABEL  = { broad:'Broad fields', health:'Health sub-fields', agriculture:'Agriculture sub-fields' };
+  function grainValid(g){ return g==='broad' || (GRAIN_PARENT[g] && NARROW[GRAIN_PARENT[g]]); }
+  function isNarrow(){ return state.grain!=='broad'; }
+  function parentKey(){ return GRAIN_PARENT[state.grain]; }
+  // Current field set for the active grain (broad fields, or the parent's sub-fields).
+  function curFields(){ return isNarrow() ? Object.keys(NARROW[parentKey()]) : FIELDS; }
+  function defaultField(){ return isNarrow() ? curFields()[0] : 'Health'; }
+  function hasAcu(){ return !isNarrow(); }
+  // Record accessors: return the demand/supply/acu sub-object for a field in the active grain.
+  function demRec(f){ return isNarrow() ? NARROW[parentKey()][f].demand : D.demand[f]; }
+  function supRec(f){ return isNarrow() ? NARROW[parentKey()][f].supply : D.supply[f]; }
+  function acuRec(f){ return isNarrow() ? null : (D.acu[f]||null); }
+  // Per-year application-share series (broad: app_share; narrow: share_of_total). Both 15-long, 2010-2024.
+  function shareSeriesOf(f){ var r=demRec(f); return isNarrow() ? (r.share_of_total||[]) : (r.app_share||[]); }
+
   // ---- derived accessors ----
-  function demOf(f){ return D.demand[f][state.horizon==='8'?'d8yr':'d5yr']; }
-  function supOf(f){ return D.supply[f][state.lens==='all'?'allNet':'heNet']; }
-  function acuOf(f){ var a=D.acu[f]; return a?(a.latest||0):0; }
+  function demOf(f){ return demRec(f)[state.horizon==='8'?'d8yr':'d5yr']; }
+  function supOf(f){ return supRec(f)[state.lens==='all'?'allNet':'heNet']; }
+  function acuOf(f){ var a=acuRec(f); return a?(a.latest||0):0; }
+  function shareLatestOf(f){ return demRec(f).share_latest; }
   function quadOf(dem,sup){
     if(dem>=0 && sup<0) return 'OPEN';
     if(dem>=0 && sup>=0) return 'HOT';
@@ -297,17 +333,18 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   // opportunity score: normalise both axes to comparable [-1,1], demand minus supply.
   function oppScores(){
+    var flds=curFields();
     var maxD=0,maxS=0;
-    FIELDS.forEach(function(f){ maxD=Math.max(maxD,Math.abs(demOf(f))); maxS=Math.max(maxS,Math.abs(supOf(f))); });
+    flds.forEach(function(f){ maxD=Math.max(maxD,Math.abs(demOf(f))); maxS=Math.max(maxS,Math.abs(supOf(f))); });
     maxD=maxD||1; maxS=maxS||1;
-    return FIELDS.map(function(f){
+    return flds.map(function(f){
       var nd=demOf(f)/maxD, ns=supOf(f)/maxS;
       return { field:f, score:nd-ns, dem:demOf(f), sup:supOf(f), acu:acuOf(f), quad:quadFor(f) };
     }).sort(function(a,b){ return b.score-a.score; });
   }
 
   // ---- app state ----
-  var state = { field:'Health', lens:'he', horizon:'5' };
+  var state = { field:'Health', lens:'he', horizon:'5', grain:'broad' };
 
   // ================= URL state =================
   function readUrl(){
@@ -315,14 +352,17 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     return {
       field: DashCommons.state.get('field', null),
       lens: DashCommons.state.get('lens', null),
-      horizon: DashCommons.state.get('horizon', null)
+      horizon: DashCommons.state.get('horizon', null),
+      grain: DashCommons.state.get('grain', null)
     };
   }
   function writeUrl(){
     if(!HAS_DC) return;
-    DashCommons.state.set('field', state.field!=='Health' ? state.field : null);
+    // field is written only when it differs from the current grain's default (keeps URLs clean).
+    DashCommons.state.set('field', state.field!==defaultField() ? state.field : null);
     DashCommons.state.set('lens', state.lens!=='he' ? state.lens : null);
     DashCommons.state.set('horizon', state.horizon!=='5' ? state.horizon : null);
+    DashCommons.state.set('grain', state.grain!=='broad' ? state.grain : null);
   }
 
   // ================= KPI cards =================
@@ -330,46 +370,67 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     var box=document.getElementById('kpis');
     var horLbl = state.horizon==='8'?'8-yr':'5-yr';
     var lensLbl = state.lens==='all'?'all CRICOS levels':'higher-ed degrees';
+    var flds = curFields();
 
     // 1. Clearest OPEN field (top opportunity score that is OPEN)
     var scored = oppScores();
     var openTop = scored.filter(function(s){return s.quad==='OPEN';})[0] || scored[0];
 
     // 2. Clearest CROWDED/FADING: field with fastest-falling demand
-    var falling = FIELDS.map(function(f){ return {field:f, dem:demOf(f), sup:supOf(f), quad:quadFor(f)}; })
+    var falling = flds.map(function(f){ return {field:f, dem:demOf(f), sup:supOf(f), quad:quadFor(f)}; })
       .filter(function(s){return s.dem<0;})
       .sort(function(a,b){ return a.dem-b.dem; });
     var fall = falling[0];
-
-    // 3. ACU's largest field + quadrant
-    var acuTop = FIELDS.map(function(f){return {field:f, acu:acuOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)};})
-      .sort(function(a,b){return b.acu-a.acu;})[0];
-
-    // 4. Rising demand, ACU absent (ACU latest 0) — strongest rise
-    var absent = FIELDS.map(function(f){return {field:f, acu:acuOf(f), dem:demOf(f), sup:supOf(f), quad:quadFor(f)};})
-      .filter(function(s){return s.acu===0 && s.dem>0;})
-      .sort(function(a,b){return b.dem-a.dem;})[0];
 
     var cards = [];
     cards.push(kcard('k-open','Clearest OPEN opportunity',
       esc(openTop.field),
       'Demand '+signed(openTop.dem)+'pp/'+horLbl+', supply '+signedInt(openTop.sup)+' ('+lensLbl+') &mdash; students want it, provider supply not keeping up.',
       openTop.quad));
-    cards.push(kcard('k-'+fall.quad.toLowerCase(),'Demand falling fastest',
-      esc(fall.field),
-      'Demand '+signed(fall.dem)+'pp/'+horLbl+', supply '+signedInt(fall.sup)+' ('+lensLbl+').',
-      fall.quad));
-    cards.push(kcard('k-'+acuTop.quad.toLowerCase(),'ACU&rsquo;s largest field',
-      fmtInt(acuTop.acu),
-      esc(acuTop.field)+' &mdash; '+fmtInt(acuTop.acu)+' commencing. Demand '+signed(acuTop.dem)+'pp, supply '+signedInt(acuTop.sup)+'.',
-      acuTop.quad));
-    if(absent){
-      cards.push(kcard('k-'+absent.quad.toLowerCase(),'Rising demand, ACU absent',
-        esc(absent.field),
-        'Demand '+signed(absent.dem)+'pp/'+horLbl+' (a strong rise) but ACU has <b>0</b> commencing here. Supply '+signedInt(absent.sup)+'.',
-        absent.quad));
+    if(fall){
+      cards.push(kcard('k-'+fall.quad.toLowerCase(),'Demand falling fastest',
+        esc(fall.field),
+        'Demand '+signed(fall.dem)+'pp/'+horLbl+', supply '+signedInt(fall.sup)+' ('+lensLbl+').',
+        fall.quad));
     } else {
-      cards.push(kcard('','Rising demand, ACU absent','&mdash;','No rising-demand field is wholly absent from ACU under this view.',null));
+      cards.push(kcard('','Demand falling fastest','&mdash;','No sub-field has falling demand under this view &mdash; all are holding or rising.',null));
+    }
+
+    if(hasAcu()){
+      // 3. ACU's largest field + quadrant
+      var acuTop = flds.map(function(f){return {field:f, acu:acuOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)};})
+        .sort(function(a,b){return b.acu-a.acu;})[0];
+      // 4. Rising demand, ACU absent (ACU latest 0) — strongest rise
+      var absent = flds.map(function(f){return {field:f, acu:acuOf(f), dem:demOf(f), sup:supOf(f), quad:quadFor(f)};})
+        .filter(function(s){return s.acu===0 && s.dem>0;})
+        .sort(function(a,b){return b.dem-a.dem;})[0];
+      cards.push(kcard('k-'+acuTop.quad.toLowerCase(),'ACU&rsquo;s largest field',
+        fmtInt(acuTop.acu),
+        esc(acuTop.field)+' &mdash; '+fmtInt(acuTop.acu)+' commencing. Demand '+signed(acuTop.dem)+'pp, supply '+signedInt(acuTop.sup)+'.',
+        acuTop.quad));
+      if(absent){
+        cards.push(kcard('k-'+absent.quad.toLowerCase(),'Rising demand, ACU absent',
+          esc(absent.field),
+          'Demand '+signed(absent.dem)+'pp/'+horLbl+' (a strong rise) but ACU has <b>0</b> commencing here. Supply '+signedInt(absent.sup)+'.',
+          absent.quad));
+      } else {
+        cards.push(kcard('','Rising demand, ACU absent','&mdash;','No rising-demand field is wholly absent from ACU under this view.',null));
+      }
+    } else {
+      // Narrow grain: no ACU data. Replace the two ACU KPIs with sub-field equivalents.
+      // 3. Largest sub-field by application share.
+      var bigTop = flds.map(function(f){return {field:f, share:shareLatestOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)};})
+        .sort(function(a,b){return b.share-a.share;})[0];
+      cards.push(kcard('k-'+bigTop.quad.toLowerCase(),'Largest sub-field by share',
+        bigTop.share.toFixed(2)+'%',
+        esc(bigTop.field)+' &mdash; '+bigTop.share.toFixed(2)+'% of all domestic applications. Demand '+signed(bigTop.dem)+'pp, supply '+signedInt(bigTop.sup)+'.',
+        bigTop.quad));
+      // 4. Share of OPEN sub-fields under this view.
+      var openCount = scored.filter(function(s){return s.quad==='OPEN';}).length;
+      cards.push(kcard('','OPEN sub-fields',
+        openCount+' of '+scored.length,
+        esc(GRAIN_LABEL[state.grain])+': '+openCount+' of '+scored.length+' sub-fields sit in <b>Open</b> (demand rising, supply contracting) under '+lensLbl+' / '+horLbl+'. <b>No ACU overlay at 4-digit.</b>',
+        null));
     }
     box.innerHTML = cards.join('');
   }
@@ -383,6 +444,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   // ================= Quadrant scatter =================
   var chQuad=null;
+  var NARROW_R=13; // uniform bubble radius at 4-digit (no ACU sizing)
   function rOf(acu){ // radius by enrolment (sqrt/area scale)
     if(!acu) return 7;
     var maxA=4607;
@@ -433,24 +495,28 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   };
 
   function renderQuad(){
+    var flds=curFields();
+    var narrow=isNarrow();
+    // Auto-scale both axes to the CURRENT field set. Narrow sub-field values are far smaller
+    // than the broad-field values, so deriving the range from `flds` (not the broad fields)
+    // keeps the bubbles spread across the plot instead of collapsing at the origin.
     var maxAbsD=0, maxAbsS=0;
-    FIELDS.forEach(function(f){ maxAbsD=Math.max(maxAbsD,Math.abs(demOf(f))); maxAbsS=Math.max(maxAbsS,Math.abs(supOf(f))); });
+    flds.forEach(function(f){ maxAbsD=Math.max(maxAbsD,Math.abs(demOf(f))); maxAbsS=Math.max(maxAbsS,Math.abs(supOf(f))); });
     var padD=maxAbsD*1.18||1, padS=maxAbsS*1.18||1;
 
-    var pts = FIELDS.map(function(f){
+    var pts = flds.map(function(f){
       var q=quadFor(f), acu=acuOf(f);
-      return { x:demOf(f), y:supOf(f), r:rOf(acu), field:f, quad:q, acu:acu,
-        bg: acu>0 ? QCOL[q] : 'rgba(255,255,255,0)',
-        bd: QCOL[q] };
+      // Narrow: no ACU data, so every bubble is uniform-sized and solid-filled (no hollow/absent state).
+      return { x:demOf(f), y:supOf(f), r:narrow?NARROW_R:rOf(acu), field:f, quad:q, acu:acu, bd: QCOL[q] };
     });
     var ds = {
       label:'Fields',
       data:pts,
-      borderWidth: pts.map(function(p){ return p.acu>0?1.5:2; }),
+      borderWidth: pts.map(function(p){ return (narrow||p.acu>0)?1.5:2; }),
       hoverBorderWidth:2.5,
-      // fill: translucent for present fields, transparent (hollow) for ACU-absent
-      backgroundColor: pts.map(function(p){ return p.acu>0 ? hexA(p.bd,0.72) : 'rgba(255,255,255,0)'; }),
-      borderColor: pts.map(function(p){ return p.acu>0 ? p.bd : hexA(p.bd,0.85); })
+      // fill: solid at narrow (uniform); translucent for ACU-present broad fields; transparent (hollow) for ACU-absent broad fields
+      backgroundColor: pts.map(function(p){ return (narrow||p.acu>0) ? hexA(p.bd,0.72) : 'rgba(255,255,255,0)'; }),
+      borderColor: pts.map(function(p){ return (narrow||p.acu>0) ? p.bd : hexA(p.bd,0.85); })
     };
 
     var ctx=document.getElementById('ch-quad').getContext('2d');
@@ -467,12 +533,14 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
             callbacks:{
               title:function(it){ return it[0].raw.field; },
               label:function(c){ var p=c.raw;
-                return [
+                var rows=[
                   'Quadrant: '+p.quad,
                   'Demand momentum: '+signed(p.x)+'pp / '+(state.horizon==='8'?'8':'5')+'-yr',
-                  'Supply momentum: '+signedInt(p.y)+' net ('+(state.lens==='all'?'all levels':'higher-ed')+')',
-                  'ACU commencing: '+(p.acu>0?fmtInt(p.acu):'0 (not offered)')
+                  'Supply momentum: '+signedInt(p.y)+' net ('+(state.lens==='all'?'all levels':'higher-ed')+')'
                 ];
+                if(isNarrow()){ rows.push('App share: '+shareLatestOf(p.field).toFixed(2)+'%'); }
+                else { rows.push('ACU commencing: '+(p.acu>0?fmtInt(p.acu):'0 (not offered)')); }
+                return rows;
               }
             }
           }
@@ -483,14 +551,21 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
               ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return signed(v,1);}} },
           y:{ min:-padS, max:padS, reverse:true, grid:{color:'rgba(30,27,24,.05)'},
               title:{display:true, text:'Supply momentum  ↑ providers cutting courses  (net CRICOS course change)', color:'#5C5651', font:{size:11,weight:'700'}},
-              ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return signedInt(v);}} }
+              ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return signedInt(Math.round(v));}} }
         }
       },
       plugins:[quadPlugin]
     });
-    document.getElementById('quad-sub').innerHTML='Each bubble is one ASCED broad field. Horizontal = domestic demand momentum ('
-      +(state.horizon==='8'?'8':'5')+'-year); vertical = CRICOS supply momentum ('+(state.lens==='all'?'all levels':'higher-ed degrees')
-      +'), axis inverted so <b>supply contracting points up</b>. Bubble size = ACU commencing enrolments; hollow = ACU does not offer the field.';
+    var hor=(state.horizon==='8'?'8':'5'), lensTxt=(state.lens==='all'?'all levels':'higher-ed degrees');
+    if(narrow){
+      document.getElementById('quad-sub').innerHTML='Each bubble is one 4-digit sub-field of <b>'+esc(parentKey())+'</b>. Horizontal = domestic demand momentum ('
+        +hor+'-year); vertical = CRICOS supply momentum ('+lensTxt+'), axis inverted so <b>supply contracting points up</b>. Axes <b>auto-scale to the sub-field values</b> (much tighter than the broad map). '
+        +'<b>No ACU overlay at 4-digit</b> &mdash; ACU enrolments are broad-field only, so bubbles are uniform.';
+    } else {
+      document.getElementById('quad-sub').innerHTML='Each bubble is one ASCED broad field. Horizontal = domestic demand momentum ('
+        +hor+'-year); vertical = CRICOS supply momentum ('+lensTxt
+        +'), axis inverted so <b>supply contracting points up</b>. Bubble size = ACU commencing enrolments; hollow = ACU does not offer the field.';
+    }
   }
   function hexA(hex,a){
     var h=hex.replace('#',''); var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
@@ -521,13 +596,17 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   var chDemand=null, chAcu=null;
   function buildFieldSel(){
     var sel=document.getElementById('fd-sel');
-    sel.innerHTML=FIELDS.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>';}).join('');
+    sel.innerHTML=curFields().map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>';}).join('');
     sel.value=state.field;
     sel.onchange=function(){ state.field=sel.value; writeUrl(); renderField(); };
   }
   function renderField(){
-    var f=state.field, dd=D.demand[f], sp=D.supply[f], ac=D.acu[f];
+    var f=state.field, dd=demRec(f), sp=supRec(f), ac=acuRec(f);
+    var narrow=isNarrow();
     var q=quadFor(f), dem=demOf(f), sup=supOf(f);
+    var shareSeries=shareSeriesOf(f);
+    // broad has a per-year applications array; narrow only has apps_latest (single).
+    var appsSeries = (!narrow && dd.applications) ? dd.applications : null;
     document.getElementById('fd-title').innerHTML='Field detail &mdash; '+esc(f)
       + ' <span class="qtag '+q+'" style="vertical-align:middle;margin-left:4px">'+q+'</span>';
 
@@ -537,14 +616,16 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     chDemand=new Chart(ctx,{
       type:'line',
       data:{ labels:YEARS_D.map(String),
-        datasets:[{ label:'Application share', data:dd.app_share,
+        datasets:[{ label:'Application share', data:shareSeries,
           borderColor:'#3C1053', backgroundColor:'rgba(60,16,83,.08)', borderWidth:2.6, fill:true, tension:.3,
           pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'#fff', pointBorderColor:'#3C1053', pointBorderWidth:2 }] },
       options:{ responsive:true, maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
         plugins:{ legend:{display:false},
           tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:11, displayColors:false,
-            callbacks:{ label:function(c){ var i=c.dataIndex; return [' Share: '+c.parsed.y.toFixed(2)+'%', ' Applications: '+fmtInt(dd.applications[i])]; } } } },
+            callbacks:{ label:function(c){ var i=c.dataIndex; var rows=[' Share: '+c.parsed.y.toFixed(2)+'%'];
+              if(appsSeries) rows.push(' Applications: '+fmtInt(appsSeries[i]));
+              return rows; } } } },
         scales:{
           x:{ grid:{display:false}, ticks:{color:'#5C5651', font:{size:9}, maxRotation:0, autoSkip:true, maxTicksLimit:8} },
           y:{ grid:{color:'rgba(30,27,24,.07)'}, ticks:{color:'#5C5651', font:{size:10}, callback:function(v){return v+'%';}} } }
@@ -564,40 +645,55 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
         +' &mdash; the all-levels figure is VET/private-provider churn, so the degree-level read is the university signal here.';
     } else { dv.style.display='none'; }
 
-    // ACU trend
-    var years = ac ? Object.keys(ac.series).map(Number).sort(function(a,b){return a-b;}) : [];
-    var vals = years.map(function(y){ return ac.series[String(y)]; });
-    var actx=document.getElementById('ch-acu').getContext('2d');
-    if(chAcu) chAcu.destroy();
-    chAcu=new Chart(actx,{
-      type:'line',
-      data:{ labels:years.map(String), datasets:[{ label:'ACU commencing', data:vals,
-        borderColor:'#F2120C', backgroundColor:'rgba(242,18,12,.08)', borderWidth:2.4, fill:true, tension:.25,
-        pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'#fff', pointBorderColor:'#F2120C', pointBorderWidth:2 }] },
-      options:{ responsive:true, maintainAspectRatio:false,
-        plugins:{ legend:{display:false},
-          tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:10, displayColors:false,
-            callbacks:{ label:function(c){ return ' '+fmtInt(c.parsed.y)+' commencing'; } } } },
-        scales:{ x:{ grid:{display:false}, ticks:{color:'#5C5651', font:{size:9}} },
-          y:{ beginAtZero:true, grid:{color:'rgba(30,27,24,.07)'}, ticks:{color:'#5C5651', font:{size:9}, maxTicksLimit:4} } }
-      }
-    });
+    // ACU trend — only at broad grain (no ACU data at 4-digit).
+    var acuWrap=document.getElementById('fd-acu-wrap'), acuNote=document.getElementById('fd-acu-note');
+    if(narrow){
+      if(chAcu){ chAcu.destroy(); chAcu=null; }
+      acuWrap.style.display='none';
+      acuNote.style.display='block';
+    } else {
+      acuWrap.style.display='';
+      acuNote.style.display='none';
+      var years = ac ? Object.keys(ac.series).map(Number).sort(function(a,b){return a-b;}) : [];
+      var vals = years.map(function(y){ return ac.series[String(y)]; });
+      var actx=document.getElementById('ch-acu').getContext('2d');
+      if(chAcu) chAcu.destroy();
+      chAcu=new Chart(actx,{
+        type:'line',
+        data:{ labels:years.map(String), datasets:[{ label:'ACU commencing', data:vals,
+          borderColor:'#F2120C', backgroundColor:'rgba(242,18,12,.08)', borderWidth:2.4, fill:true, tension:.25,
+          pointRadius:3, pointHoverRadius:6, pointBackgroundColor:'#fff', pointBorderColor:'#F2120C', pointBorderWidth:2 }] },
+        options:{ responsive:true, maintainAspectRatio:false,
+          plugins:{ legend:{display:false},
+            tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:10, displayColors:false,
+              callbacks:{ label:function(c){ return ' '+fmtInt(c.parsed.y)+' commencing'; } } } },
+          scales:{ x:{ grid:{display:false}, ticks:{color:'#5C5651', font:{size:9}} },
+            y:{ beginAtZero:true, grid:{color:'rgba(30,27,24,.07)'}, ticks:{color:'#5C5651', font:{size:9}, maxTicksLimit:4} } }
+        }
+      });
+    }
 
     // plain-English readout
-    var acuLatest = ac?ac.latest:0, acuYr = ac?ac.latest_year:'';
     var demWord = dem>=0 ? 'rising' : 'falling';
     var supWord = sup<0 ? 'contracting' : (sup>0?'expanding':'flat');
     var qDesc = { OPEN:'an opportunity gap &mdash; demand up, provider supply pulling back',
                   HOT:'a hot, competitive field &mdash; both demand and supply climbing, so move fast',
                   CROWDED:'crowded &mdash; providers piling in even as domestic interest cools',
                   FADING:'fading &mdash; both demand and supply in retreat' };
-    var acuClause = acuLatest>0
-      ? 'ACU offers it with <b>'+fmtInt(acuLatest)+'</b> commencing ('+acuYr+')'
-      : 'ACU does <b>not</b> currently offer it (0 commencing)';
+    var tailClause;
+    if(narrow){
+      tailClause = 'It holds <b>'+shareLatestOf(f).toFixed(2)+'%</b> of all domestic applications ('+fmtInt(dd.apps_latest)+' in 2024). '
+        + '<b>No ACU overlay at 4-digit</b> &mdash; ACU enrolments are broad-field only';
+    } else {
+      var acuLatest = ac?ac.latest:0, acuYr = ac?ac.latest_year:'';
+      tailClause = acuLatest>0
+        ? 'ACU offers it with <b>'+fmtInt(acuLatest)+'</b> commencing ('+acuYr+')'
+        : 'ACU does <b>not</b> currently offer it (0 commencing)';
+    }
     document.getElementById('fd-readout').innerHTML =
       '<b>'+esc(f)+':</b> domestic demand '+demWord+' ('+signed(dem)+'pp / '+(state.horizon==='8'?'8':'5')+'-yr share change), '
       + (state.lens==='all'?'all-levels':'degree-level')+' CRICOS supply '+supWord+' ('+signedInt(sup)+' net) &mdash; '
-      + '<span class="qinline" style="color:'+QCOL[q]+'">'+qDesc[q]+'</span>. '+acuClause+'.';
+      + '<span class="qinline" style="color:'+QCOL[q]+'">'+qDesc[q]+'</span>. '+tailClause+'.';
     document.getElementById('fd-sel').value=f;
   }
   function supCell(lbl,net,nw,rm){
@@ -609,6 +705,14 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   // ================= ACU alignment =================
   function renderAcuAlign(){
+    var host0=document.getElementById('bars-acu');
+    if(isNarrow()){
+      // No ACU enrolment data at 4-digit — ACU is broad-field only.
+      host0.innerHTML='<div class="qaxis-note" style="margin-top:0">The ACU portfolio overlay is <b>broad-field only</b> &mdash; ACU commencing enrolments are not published at 4-digit, so there is no sub-field overlay for <b>'
+        +esc(parentKey())+'</b>. Switch <b>Granularity</b> back to <b>Broad fields</b> to see where ACU sits on the map.</div>';
+      document.getElementById('acu-readout').innerHTML='At 4-digit granularity the map shows domestic demand &times; CRICOS supply for the sub-fields only. ACU&rsquo;s own position is a broad-field measure &mdash; view it under <b>Broad fields</b>.';
+      return;
+    }
     var rows=FIELDS.map(function(f){ return {field:f, acu:acuOf(f), quad:quadFor(f), dem:demOf(f), sup:supOf(f)}; })
       .sort(function(a,b){ return b.acu-a.acu; });
     var maxA=Math.max.apply(null, rows.map(function(r){return r.acu;}))||1;
@@ -639,23 +743,42 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   // ================= CSV export =================
   function exportCsv(){
-    var header=['field','demand_d5yr_pp','demand_d8yr_pp','share_latest_pct','heNet','allNet','acu_commencing_latest','quadrant_current'];
+    // Export reflects what's on screen: the active grain's field set, with a grain column.
+    var narrow=isNarrow();
+    var header=['grain','parent_field','field','demand_d5yr_pp','demand_d8yr_pp','share_latest_pct','heNet','allNet','acu_commencing_latest','quadrant_current'];
     var rows=[header];
-    FIELDS.forEach(function(f){
-      var dd=D.demand[f], sp=D.supply[f];
-      rows.push([f, dd.d5yr, dd.d8yr, dd.share_latest, sp.heNet, sp.allNet, acuOf(f), quadFor(f)]);
+    curFields().forEach(function(f){
+      var dd=demRec(f), sp=supRec(f);
+      rows.push([ state.grain, narrow?parentKey():'', f, dd.d5yr, dd.d8yr, dd.share_latest, sp.heNet, sp.allNet,
+        narrow?'':acuOf(f), quadFor(f) ]);
     });
     var csv=rows.map(function(r){ return r.map(function(v){ var s=String(v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }).join('\n');
     var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
-    a.href=url; a.download='demand-supply-map_'+state.lens+'_'+state.horizon+'yr.csv';
+    a.href=url; a.download='demand-supply-map_'+state.grain+'_'+state.lens+'_'+state.horizon+'yr.csv';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 
+  // ================= scope strip =================
+  function renderScope(){
+    var el=document.getElementById('mh-scope');
+    if(!el) return;
+    if(isNarrow()){
+      var residual = state.grain==='health'
+        ? ' &ldquo;Health Other&rdquo; is a <b>residual grouping</b> (pharmacy, public health, rehabilitation, radiography, etc.), not a single discipline &mdash; read it as a bundle.'
+        : '';
+      el.innerHTML='<span class="pill">4-digit</span><span><b>'+esc(GRAIN_LABEL[state.grain])+' view.</b> Sub-field detail is available for <b>Health &amp; Agriculture only</b> &mdash; '
+        +'the DoE demand source publishes 4-digit application data for just these two broad fields. <b>No ACU overlay</b> at this level (ACU enrolments are broad-field only).'+residual+'</span>';
+    } else {
+      el.innerHTML='<span class="pill">2-digit</span><span><b>Broad fields view</b> &mdash; 10 ASCED broad fields with the ACU portfolio overlay. '
+        +'Drill down to <b>4-digit sub-fields</b> for Health or Agriculture (the only two broad fields the DoE demand source publishes at sub-field detail) via the <b>Granularity</b> control.</span>';
+    }
+  }
+
   // ================= render orchestration =================
-  function renderReactive(){ renderKpis(); renderQuad(); renderRank(); renderField(); renderAcuAlign(); }
+  function renderReactive(){ renderScope(); renderKpis(); renderQuad(); renderRank(); renderField(); renderAcuAlign(); }
   function renderStatic(){
     document.getElementById('foot').innerHTML =
       '<b>Sources.</b> Demand &amp; ACU: '+esc(D.meta.demand_source)+' '+esc(D.meta.acu_source)+' '
@@ -679,19 +802,43 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   function setSeg(id, val){
     document.getElementById(id).querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.dataset.v===val); });
   }
+  // Granularity needs its own handler: changing grain swaps the whole field set,
+  // so it must reset/validate the selected field and rebuild the field selector.
+  function wireGrain(){
+    var wrap=document.getElementById('seg-grain');
+    wrap.querySelectorAll('button').forEach(function(b){
+      b.onclick=function(){
+        var g=b.dataset.v;
+        if(!grainValid(g) || g===state.grain) { if(g===state.grain) return; g='broad'; }
+        state.grain=g;
+        wrap.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x.dataset.v===state.grain); });
+        // keep current field only if it exists in the new set, else fall back to the grain default
+        if(curFields().indexOf(state.field)===-1) state.field=defaultField();
+        buildFieldSel();
+        writeUrl();
+        renderReactive();
+      };
+    });
+  }
 
   // ================= init =================
   function boot(){
     document.getElementById('btn-csv').onclick=exportCsv;
     wireSeg('seg-lens','lens', renderReactive);
     wireSeg('seg-horizon','horizon', renderReactive);
-    buildFieldSel();
+    wireGrain();
 
+    // Read ALL url params first, then apply (grain before field, since field is grain-scoped).
     var u=readUrl();
     if(u.lens==='he'||u.lens==='all') state.lens=u.lens;
     if(u.horizon==='5'||u.horizon==='8') state.horizon=u.horizon;
-    if(u.field && FIELDS.indexOf(u.field)!==-1) state.field=u.field;
+    if(u.grain && grainValid(u.grain)) state.grain=u.grain;
+    // field must be validated against the (now-resolved) grain's field set
+    if(u.field && curFields().indexOf(u.field)!==-1) state.field=u.field;
+    else state.field=defaultField();
 
+    buildFieldSel();
+    setSeg('seg-grain', state.grain);
     setSeg('seg-lens', state.lens);
     setSeg('seg-horizon', state.horizon);
     document.getElementById('fd-sel').value=state.field;
