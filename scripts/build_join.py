@@ -65,6 +65,51 @@ out['meta']={
  'caveat_horizon':'Supply is one-year momentum (2025->2026 snapshot pair); demand is a multi-year share trend. Demand is a SHARE of applications (relative), which can rise even as total applications fall.'
 }
 os.makedirs('.',exist_ok=True)
+
+# ---- NARROW (4-digit) drill-down: only Health + Agriculture have narrow DEMAND
+# (DoE Table A4.1 only breaks these two broad fields to sub-field). CRICOS supply
+# exists at narrow for everything; ACU has no narrow, so no overlay at this level. ----
+NARROW_SUPPLY_MAP = {
+  # DoE demand sub-field -> list of CRICOS narrow-field codes to sum for supply
+  'Nursing':['0603'], 'Medical Studies':['0601'], 'Dental Studies':['0607'], 'Veterinary Studies':['0611'],
+  'Health Other':['0600','0605','0613','0615','0617','0619','0699'],
+  'Environmental Studies':['0509'],
+  'Agriculture and other Related Studies':['0501','0503','0599'],
+}
+# CRICOS narrow net change by 4-digit code (HE and all levels)
+nf_all={}; nf_he={}
+for c in D['courses']:
+    code=(c['nf'] or '')[:4]
+    if not code.isdigit(): continue
+    dd=1 if c['st']=='new' else -1
+    isnew=c['st']=='new'
+    nf_all.setdefault(code,{'new':0,'rem':0})['new' if isnew else 'rem']+=1
+    if c['cl'] in HE: nf_he.setdefault(code,{'new':0,'rem':0})['new' if isnew else 'rem']+=1
+def supp(codes):
+    an=sum(nf_all.get(x,{}).get('new',0) for x in codes); ar=sum(nf_all.get(x,{}).get('rem',0) for x in codes)
+    hn=sum(nf_he.get(x,{}).get('new',0) for x in codes); hr=sum(nf_he.get(x,{}).get('rem',0) for x in codes)
+    return {'allNew':an,'allRem':ar,'allNet':an-ar,'heNew':hn,'heRem':hr,'heNet':hn-hr}
+
+narrow={}
+for parent, subs in doe['narrow'].items():
+    narrow[parent]={}
+    for sub, obj in subs.items():
+        sot=obj['share_of_total']
+        codes=NARROW_SUPPLY_MAP.get(sub)
+        narrow[parent][sub]={
+          'demand':{'share_of_total':sot,'share_latest':sot[i24],
+                    'd5yr':round(sot[i24]-sot[i19],3),'d8yr':round(sot[i24]-sot[i16],3),
+                    'apps_latest':obj['applications'][i24]},
+          'supply':supp(codes) if codes else None,
+          'supply_note': None if codes else 'no CRICOS narrow mapping'
+        }
+out['narrow']=narrow
+out['meta']['narrow_note']=('4-digit drill-down is available only for Health and Agriculture — the '
+  'two broad fields the DoE applications source breaks to sub-field. The other 8 broad fields are '
+  'published at broad level only, so no narrow demand exists for them. No ACU overlay at narrow '
+  'level (ACU enrolments are broad-field only). Demand = sub-field share of ALL undergraduate '
+  'applications; supply = CRICOS net course change for the mapped narrow field(s).')
+
 with open('data.js','w') as f:
     f.write('window.DEMANDSUPPLY = '); json.dump(out,f,separators=(',',':')); f.write(';\n')
 print('data.js', os.path.getsize('data.js'),'bytes | fields:',len(FIELDS),'| acu fields:',len(out['acu']))
