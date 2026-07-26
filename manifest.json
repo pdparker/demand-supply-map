@@ -3,7 +3,7 @@
   "title": "Demand & Supply Opportunity Map",
   "url": "https://pdparker.github.io/demand-supply-map/",
   "repo": "pdparker/demand-supply-map",
-  "lastBuild": "2026-07-21",
+  "lastBuild": "2026-07-27",
   "dataSources": [
     { "name": "Domestic university application share by field (Student Interest Signals / Dept of Education)", "vintage": "2010-2024" },
     { "name": "CRICOS course net change by broad field (CRICOS dashboard)", "vintage": "2025 vs 2026" },

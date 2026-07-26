@@ -12,7 +12,7 @@
 <style>
 :root{
   --purple:#3C1053; --purple-2:#5A2A78; --purple-lite:#6E4B9E;
-  --red:#F2120C; --red-soft:rgba(242,18,12,.10);
+  --red:#F2120C; --red-dark:#C10E09; --red-soft:rgba(242,18,12,.10);
   --sand:#FBF6F0; --sand-2:#F3EBE1; --card:#FFFFFF;
   --ink:#1E1B18; --muted:#5C5651; --line:rgba(30,27,24,.10);
   --gold:#B8860B; --slate:#3E6D8E; --ok:#2E7D5B;
@@ -104,7 +104,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 .strip-c.pos{border-color:rgba(46,125,91,.3);background:rgba(46,125,91,.05);}
 .strip-y{font-size:.58rem;font-weight:700;color:var(--muted);letter-spacing:.03em;text-transform:uppercase;}
 .strip-v{font-family:'Manrope';font-size:1.15rem;font-weight:800;color:var(--purple);margin-top:3px;}
-.strip-c.neg .strip-v{color:var(--red);} .strip-c.pos .strip-v{color:var(--ok);}
+.strip-c.neg .strip-v{color:var(--red-dark);} .strip-c.pos .strip-v{color:var(--ok);}
 .strip-n{font-size:.6rem;color:var(--muted);margin-top:2px;}
 .readout{background:linear-gradient(180deg,#fff 0%,var(--sand) 100%);border:1px solid var(--line);border-left:4px solid var(--purple);border-radius:10px;padding:14px 16px;font-size:.82rem;line-height:1.6;color:var(--ink);}
 .readout b{color:var(--purple);}
@@ -119,22 +119,34 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 .cav-list li{font-size:.8rem;line-height:1.55;color:var(--ink);padding-left:22px;position:relative;}
 .cav-list li::before{content:"▸";position:absolute;left:2px;top:0;color:var(--gold);font-size:.8rem;}
 .cav-list li b{color:var(--purple);}
-.sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:14px;padding-top:6px;}
+.sec-eyebrow{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red-dark);margin-bottom:14px;padding-top:6px;}
 .foot{font-size:.7rem;color:var(--muted);line-height:1.6;padding:12px 4px 0;border-top:1px solid var(--line);margin-top:8px;}
 .foot b{color:var(--ink);}
 .foot a{color:var(--purple);font-weight:700;text-decoration:none;}
 .foot a:hover{text-decoration:underline;}
 @media(max-width:1080px){.krow{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}.bar-row{grid-template-columns:160px 1fr 160px;}.chart-wrap.quad{height:420px;}}
 @media(max-width:620px){.main{padding:16px;}.masthead{padding:18px 16px;}.krow{grid-template-columns:1fr;}.bar-row{grid-template-columns:130px 1fr;}.bar-val{grid-column:2/-1;text-align:left;justify-content:flex-start;}.mh-ctrls{width:100%;}.qlegend{grid-template-columns:1fr;}}
+.print-only{display:none;}
 @media print{
+  @page{margin:14mm;}
   .mh-ctrls,.btn-csv{display:none!important;}
-  .card,.kpi,.caveats{break-inside:avoid;box-shadow:none;}
+  .card,.kpi,.caveats{break-inside:avoid;page-break-inside:avoid;box-shadow:none;}
   body{background:#fff;}
-  .masthead{background:var(--purple)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .masthead{background:#fff!important;color:var(--ink)!important;padding:0 0 12px;border-bottom:2px solid var(--purple);}
+  .masthead .mh-sub,.masthead .mh-caveat,.masthead .mh-scope{color:var(--muted)!important;}
+  .masthead .mh-sub b,.masthead .mh-caveat b,.masthead .mh-scope b{color:var(--ink)!important;}
+  .masthead .mh-scope{background:var(--sand)!important;border-color:var(--line)!important;}
+  .print-only{display:block;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:11px;color:var(--ink);}
+  .print-only strong{font-size:13px;}
+  .bar-fill,.swatch,.qtag,.qbadge,.kpi,.qcell,.strip-c,.acu-dot{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 }
 </style>
 </head>
 <body>
+<div class="print-only">
+  <strong>Demand &amp; Supply Opportunity Map</strong><br>
+  Printed from pdparker.github.io/demand-supply-map/ — <span class="print-date"></span>
+</div>
 <header class="masthead">
   <div class="mh-top">
     <div>
@@ -205,7 +217,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     <div class="card-hd">
       <div>
         <div class="card-t">Opportunity ranking</div>
-        <div class="card-s">Fields scored by demand momentum minus a normalised supply momentum, so <b>demand-rising / supply-contracting</b> fields rise to the top. Both inputs are normalised to a comparable scale (the two markets are not directly divisible). Bar colour = quadrant; <span style="color:var(--red);font-weight:700">&#9679;</span> marks fields ACU already offers.</div>
+        <div class="card-s">Fields scored by demand momentum minus a normalised supply momentum, so <b>demand-rising / supply-contracting</b> fields rise to the top. Both inputs are normalised to a comparable scale (the two markets are not directly divisible). Bar colour = quadrant; <span style="color:var(--red-dark);font-weight:700">&#9679;</span> marks fields ACU already offers.</div>
       </div>
     </div>
     <div class="legend">
@@ -285,6 +297,11 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   "use strict";
   var D = window.DEMANDSUPPLY;
   var HAS_DC = (typeof DashCommons !== 'undefined');
+
+  var printDateEl = document.querySelector('.print-date');
+  if (printDateEl) {
+    printDateEl.textContent = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
 
   // ---- helpers ----
   function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
