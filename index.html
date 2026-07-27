@@ -41,6 +41,10 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 .seg button.on{background:#fff;color:var(--purple);}
 .btn-csv{font-family:Arial,Helvetica,sans-serif;font-size:.78rem;font-weight:700;color:#fff;background:var(--red);border:none;border-radius:8px;padding:9px 16px;cursor:pointer;align-self:flex-end;white-space:nowrap;transition:filter .15s;}
 .btn-csv:hover{filter:brightness(1.08);}
+.btn-png{font-family:Arial,Helvetica,sans-serif;font-size:.7rem;font-weight:700;color:var(--purple);background:#fff;border:1px solid rgba(60,16,83,.25);border-radius:8px;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:filter .15s,background .15s;display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;}
+.btn-png:hover{background:var(--sand-2);}
+.subttl-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.subttl-row .subttl{margin-bottom:0;}
 /* ── Layout ── */
 .main{padding:22px 32px 56px;max-width:1500px;margin:0 auto;}
 .krow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
@@ -129,7 +133,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 .print-only{display:none;}
 @media print{
   @page{margin:14mm;}
-  .mh-ctrls,.btn-csv{display:none!important;}
+  .mh-ctrls,.btn-csv,.btn-png{display:none!important;}
   .card,.kpi,.caveats{break-inside:avoid;page-break-inside:avoid;box-shadow:none;}
   body{background:#fff;}
   .masthead{background:#fff!important;color:var(--ink)!important;padding:0 0 12px;border-bottom:2px solid var(--purple);}
@@ -195,6 +199,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
         <div class="card-t">Demand momentum &times; supply momentum, by discipline</div>
         <div class="card-s" id="quad-sub">Each bubble is one ASCED broad field. Horizontal = domestic demand momentum; vertical = CRICOS supply momentum (axis inverted so <b>supply contracting points up</b>). Bubble size = ACU commencing enrolments; hollow = ACU does not offer the field.</div>
       </div>
+      <button class="btn-png" id="btn-png-quad" type="button">&#8681; Download PNG</button>
     </div>
     <div class="grid-2">
       <div class="chart-wrap quad"><canvas id="ch-quad"></canvas></div>
@@ -245,7 +250,10 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     </div>
     <div class="grid-2">
       <div>
-        <div class="subttl">Domestic application share, 2010&ndash;2024</div>
+        <div class="subttl-row">
+          <div class="subttl">Domestic application share, 2010&ndash;2024</div>
+          <button class="btn-png" id="btn-png-demand" type="button">&#8681; PNG</button>
+        </div>
         <div class="chart-wrap tall"><canvas id="ch-demand"></canvas></div>
       </div>
       <div>
@@ -253,7 +261,10 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
         <div class="strip" id="fd-supply"></div>
         <div class="diverge" id="fd-diverge" style="display:none"></div>
         <div id="fd-acu-wrap">
-          <div class="subttl" style="margin-top:16px">ACU commencing enrolments</div>
+          <div class="subttl-row" style="margin-top:16px">
+            <div class="subttl" style="margin-top:0">ACU commencing enrolments</div>
+            <button class="btn-png" id="btn-png-acu" type="button">&#8681; PNG</button>
+          </div>
           <div class="chart-wrap" style="height:150px"><canvas id="ch-acu"></canvas></div>
         </div>
         <div class="qaxis-note" id="fd-acu-note" style="display:none;margin-top:16px">No ACU overlay at 4-digit &mdash; <b>ACU enrolments are broad-field only</b>. Switch to Broad fields to see ACU commencements.</div>
@@ -841,6 +852,23 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   // ================= init =================
   function boot(){
     document.getElementById('btn-csv').onclick=exportCsv;
+    document.getElementById('btn-png-quad').onclick=function(){
+      if(!chQuad || !HAS_DC) return;
+      var url=chQuad.toBase64Image('image/png',1);
+      DashCommons.downloadFile(url,'demand-supply-map-opportunity-map-'+new Date().toISOString().slice(0,10)+'.png');
+    };
+    document.getElementById('btn-png-demand').onclick=function(){
+      if(!chDemand || !HAS_DC) return;
+      var slug=String(state.field||'field').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      var url=chDemand.toBase64Image('image/png',1);
+      DashCommons.downloadFile(url,'demand-supply-map-field-demand-'+slug+'-'+new Date().toISOString().slice(0,10)+'.png');
+    };
+    document.getElementById('btn-png-acu').onclick=function(){
+      if(!chAcu || !HAS_DC) return;
+      var slug=String(state.field||'field').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      var url=chAcu.toBase64Image('image/png',1);
+      DashCommons.downloadFile(url,'demand-supply-map-acu-commencements-'+slug+'-'+new Date().toISOString().slice(0,10)+'.png');
+    };
     wireSeg('seg-lens','lens', renderReactive);
     wireSeg('seg-horizon','horizon', renderReactive);
     wireGrain();
