@@ -1,5 +1,5 @@
 import json, re, csv, os
-SIS_DIR='/Users/philipparker/Dropbox/Claude_Cowork/inbox/student-interest-signals'
+SIS_DIR='/Users/philipparker/Dropbox/claude_projects/_remote/student-interest-signals'
 CRICOS='/Users/philipparker/Dropbox/claude_projects/cricos-dashboard-2025-2026/index.html'
 
 # ---- Student Signals demand ----
@@ -7,7 +7,9 @@ s=open(f'{SIS_DIR}/assets/js/data.js').read()
 sis=json.loads(s[s.index('{'):s.rindex('}')+1])
 doe=sis['doe']; yrs=doe['years']
 FIELDS=doe['fields']  # 10 ASCED broad fields (university-relevant)
-i16,i19,i24=yrs.index(2016),yrs.index(2019),yrs.index(2024)
+LAST=max(yrs); Y5,Y8=LAST-5,LAST-8   # momentum windows relative to latest data year
+i16,i19,i24=yrs.index(Y8),yrs.index(Y5),yrs.index(LAST)
+
 
 # ---- CRICOS supply ----
 html=open(CRICOS).read(); idx=html.find('const D='); start=html.find('{',idx)
@@ -42,7 +44,9 @@ for r in csv.DictReader(open(f'{SIS_DIR}/data/processed/commencements_acu_long.c
     if f in FIELDS:
         acu.setdefault(f,{})[int(r['year'])]=int(r['commencing'])
 
-out={'generated':'2026-07-21','fields':FIELDS,'years_demand':yrs,'supply_period':'2025 → 2026',
+import datetime
+ACU_Y0=min(min(v) for v in acu.values()); ACU_Y1=max(max(v) for v in acu.values())
+out={'generated':datetime.date.today().isoformat(),'fields':FIELDS,'years_demand':yrs,'supply_period':'2025 → 2026',
      'demand':{}, 'supply':{}, 'acu':{}}
 for f in FIELDS:
     a=doe['app_share'][f]; ap=doe['applications'][f]
@@ -57,9 +61,9 @@ for f in FIELDS:
             'latest':acu[f][yr[-1]],'latest_year':yr[-1],'first':acu[f][yr[0]],'first_year':yr[0]}
 
 out['meta']={
- 'demand_source':'Domestic university application share by ASCED broad field of education — Dept of Education, via the Student Interest Signals dashboard. National, 2010-2024.',
+ 'demand_source':'Domestic university application share by ASCED broad field of education — Dept of Education, via the Student Interest Signals dashboard. National, '+f'{yrs[0]}-{LAST}.',
  'supply_source':'Net change in CRICOS-registered courses by broad field, 2025 vs 2026 (new minus removed) — from the CRICOS dashboard. The CRICOS register is the international-student market.',
- 'acu_source':'ACU commencing domestic enrolments by field, 2017-2024 (Student Signals).',
+ 'acu_source':f'ACU commencing domestic enrolments by field, {ACU_Y0}-{ACU_Y1} (Student Signals).',
  'caveat_market':'DEMAND is domestic student appetite; SUPPLY is provider behaviour in the international-student register. Related proxies for a field’s momentum, but NOT the same market — read directionally, not as a like-for-like ratio.',
  'caveat_level':'CRICOS all-levels supply is dominated by VET/private-provider churn. The higher-education-only cut (Bachelor and above) is the relevant lens for a university degree portfolio, and often tells a different story (e.g. Architecture: all-levels +246 but degree-level -14).',
  'caveat_horizon':'Supply is one-year momentum (2025->2026 snapshot pair); demand is a multi-year share trend. Demand is a SHARE of applications (relative), which can rise even as total applications fall.'

@@ -241,7 +241,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     <div class="card-hd">
       <div>
         <div class="card-t" id="fd-title">Field detail</div>
-        <div class="card-s">Demand-share trend (2010&ndash;2024), CRICOS supply detail at both lenses, and ACU commencement trend for one field.</div>
+        <div class="card-s">Demand-share trend (<span class="yr-range"></span>), CRICOS supply detail at both lenses, and ACU commencement trend for one field.</div>
       </div>
       <div class="seg-group" style="align-items:flex-end">
         <label style="color:var(--muted);font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Field</label>
@@ -251,7 +251,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
     <div class="grid-2">
       <div>
         <div class="subttl-row">
-          <div class="subttl">Domestic application share, 2010&ndash;2024</div>
+          <div class="subttl">Domestic application share, <span class="yr-range"></span></div>
           <button class="btn-png" id="btn-png-demand" type="button">&#8681; PNG</button>
         </div>
         <div class="chart-wrap tall"><canvas id="ch-demand"></canvas></div>
@@ -322,6 +322,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   var FIELDS = D.fields.slice();
   var YEARS_D = D.years_demand.slice();
+  (function(){ var t=YEARS_D[0]+'\u2013'+YEARS_D[YEARS_D.length-1]; Array.prototype.forEach.call(document.querySelectorAll('.yr-range'),function(e){e.textContent=t;}); })();
   var NARROW = D.narrow || {};
 
   // Quadrant colours
@@ -343,7 +344,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   function demRec(f){ return isNarrow() ? NARROW[parentKey()][f].demand : D.demand[f]; }
   function supRec(f){ return isNarrow() ? NARROW[parentKey()][f].supply : D.supply[f]; }
   function acuRec(f){ return isNarrow() ? null : (D.acu[f]||null); }
-  // Per-year application-share series (broad: app_share; narrow: share_of_total). Both 15-long, 2010-2024.
+  // Per-year application-share series (broad: app_share; narrow: share_of_total). Both as long as YEARS_D (first-to-latest data year).
   function shareSeriesOf(f){ var r=demRec(f); return isNarrow() ? (r.share_of_total||[]) : (r.app_share||[]); }
 
   // ---- derived accessors ----
@@ -710,7 +711,7 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
                   FADING:'fading &mdash; both demand and supply in retreat' };
     var tailClause;
     if(narrow){
-      tailClause = 'It holds <b>'+shareLatestOf(f).toFixed(2)+'%</b> of all domestic applications ('+fmtInt(dd.apps_latest)+' in 2024). '
+      tailClause = 'It holds <b>'+shareLatestOf(f).toFixed(2)+'%</b> of all domestic applications ('+fmtInt(dd.apps_latest)+' in '+YEARS_D[YEARS_D.length-1]+'). '
         + '<b>No ACU overlay at 4-digit</b> &mdash; ACU enrolments are broad-field only';
     } else {
       var acuLatest = ac?ac.latest:0, acuYr = ac?ac.latest_year:'';
