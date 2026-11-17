@@ -131,6 +131,44 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 @media(max-width:1080px){.krow{grid-template-columns:repeat(2,1fr);}.grid-2{grid-template-columns:1fr;}.bar-row{grid-template-columns:160px 1fr 160px;}.chart-wrap.quad{height:420px;}}
 @media(max-width:620px){.main{padding:16px;}.masthead{padding:18px 16px;}.krow{grid-template-columns:1fr;}.bar-row{grid-template-columns:130px 1fr;}.bar-val{grid-column:2/-1;text-align:left;justify-content:flex-start;}.mh-ctrls{width:100%;}.qlegend{grid-template-columns:1fr;}}
 .print-only{display:none;}
+/* ── Tabs ── */
+.tabbar{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;}
+.tabbar-in{max-width:1500px;margin:0 auto;padding:0 32px;display:flex;gap:4px;overflow-x:auto;}
+.tabbar button{font-family:'Manrope',Arial,Helvetica,sans-serif;font-size:.84rem;font-weight:700;color:var(--muted);background:none;border:none;border-bottom:3px solid transparent;padding:13px 16px 11px;cursor:pointer;white-space:nowrap;}
+.tabbar button:hover{color:var(--purple);}
+.tabbar button.on{color:var(--purple);border-bottom-color:var(--red);}
+.tabbar .tab-new{font-size:.55rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;background:var(--red-soft);color:var(--red-dark);border-radius:9px;padding:2px 7px;margin-left:6px;vertical-align:2px;}
+body.tab-emp .map-only{display:none!important;}
+body:not(.tab-emp) .emp-only{display:none!important;}
+/* ── Employer-demand tab ── */
+.seg.light{background:var(--sand);border-color:rgba(60,16,83,.2);}
+.seg.light button{color:var(--muted);}
+.seg.light button:hover{color:var(--purple);}
+.seg.light button.on{background:var(--purple);color:#fff;}
+.e-ctrls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.e-legend{display:flex;gap:16px;font-size:.68rem;color:var(--muted);margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.e-legend span{display:inline-flex;align-items:center;gap:6px;}
+.e-legend i{width:12px;height:12px;border-radius:50%;display:inline-block;}
+.etbl-wrap{overflow-x:auto;}
+table.etbl{width:100%;border-collapse:collapse;font-size:.76rem;}
+.etbl th{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:right;padding:8px 10px;border-bottom:2px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none;}
+.etbl th:first-child,.etbl td:first-child{text-align:left;}
+.etbl th.sorted{color:var(--purple);}
+.etbl td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.etbl td:first-child{white-space:normal;min-width:220px;}
+.etbl tr.clk{cursor:pointer;} .etbl tr.clk:hover td{background:var(--sand);}
+.etbl tr.sel td{background:rgba(60,16,83,.05);}
+.etbl .fcode{font-size:.62rem;color:var(--muted);font-weight:700;margin-right:5px;}
+.etbl .bname{display:block;font-size:.62rem;color:var(--muted);margin-top:1px;}
+.etbl .neg{color:var(--ok);font-weight:700;} .etbl .pos{color:var(--gold);font-weight:700;}
+.meter{display:inline-block;width:46px;height:6px;background:var(--sand-2);border-radius:3px;vertical-align:middle;margin-left:6px;overflow:hidden;}
+.meter b{display:block;height:100%;background:var(--red);}
+.sig{display:inline-block;font-size:.55rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:9px;color:#fff;}
+.sig.SG{background:var(--q-open);} .sig.S{background:var(--gold);} .sig.G{background:var(--slate);} .sig.N{background:#9a928b;}
+.rate{display:inline-block;font-size:.58rem;font-weight:800;padding:2px 7px;border-radius:9px;}
+.rate.S{background:var(--red);color:#fff;} .rate.R,.rate.M{background:rgba(242,18,12,.14);color:var(--red-dark);} .rate.NS{background:var(--sand-2);color:var(--muted);} .rate.na{background:var(--sand-2);color:var(--muted);font-weight:600;}
+@media(max-width:620px){.tabbar-in{padding:0 16px;}.e-ctrls{width:100%;}}
+@media print{.tabbar{display:none;}}
 @media print{
   @page{margin:14mm;}
   .mh-ctrls,.btn-csv,.btn-png{display:none!important;}
@@ -155,11 +193,13 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   <div class="mh-top">
     <div>
       <h1 class="mh-title">Demand &amp; Supply Opportunity Map</h1>
-      <div class="mh-sub">For each discipline: is domestic student <b>demand</b> momentum rising or falling, is CRICOS course <b>supply</b> momentum expanding or contracting &mdash; and therefore is the field <b style="color:#8FE3B8">Open</b>, <b style="color:#FF8A85">Hot</b>, <b style="color:#F0C778">Crowded</b> or <b style="color:#9FC0D8">Fading</b>? Overlaid with where ACU&rsquo;s own portfolio sits.</div>
-      <div class="mh-caveat">&#9888;&#65039;<span><b>Two different markets.</b> Demand is <b>domestic</b> student appetite (application share); supply is provider behaviour in the <b>international-student</b> CRICOS register. Related momentum proxies &mdash; read the map <b>directionally</b>, never as a literal demand/supply ratio.</span></div>
-      <div class="mh-scope" id="mh-scope"></div>
+      <div class="mh-sub map-only">For each discipline: is domestic student <b>demand</b> momentum rising or falling, is CRICOS course <b>supply</b> momentum expanding or contracting &mdash; and therefore is the field <b style="color:#8FE3B8">Open</b>, <b style="color:#FF8A85">Hot</b>, <b style="color:#F0C778">Crowded</b> or <b style="color:#9FC0D8">Fading</b>? Overlaid with where ACU&rsquo;s own portfolio sits.</div>
+      <div class="mh-caveat map-only">&#9888;&#65039;<span><b>Two different markets.</b> Demand is <b>domestic</b> student appetite (application share); supply is provider behaviour in the <b>international-student</b> CRICOS register. Related momentum proxies &mdash; read the map <b>directionally</b>, never as a literal demand/supply ratio.</span></div>
+      <div class="mh-scope map-only" id="mh-scope"></div>
+      <div class="mh-sub emp-only">For each <b>4-digit field of education</b>: how many degree-level jobs draw on it, how fast they are projected to grow to 2035, how much of that employment Jobs and Skills Australia rates <b>in shortage</b> in 2026 &mdash; and whether CRICOS higher-education supply in the field is expanding or contracting.</div>
+      <div class="mh-caveat emp-only">&#9888;&#65039;<span><b>Occupation &rarr; field is a curated crosswalk.</b> Each degree-level occupation is assigned to the field(s) that train for it by judgement, not measured graduate flows. Read the shortage and growth figures as <b>employer pull on a field</b>, not graduate outcomes.</span></div>
     </div>
-    <div class="mh-ctrls">
+    <div class="mh-ctrls map-only">
       <div class="seg-group">
         <label>Granularity</label>
         <div class="seg" id="seg-grain">
@@ -187,7 +227,12 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   </div>
 </header>
 
-<div class="main">
+<nav class="tabbar" aria-label="Dashboard views"><div class="tabbar-in" role="tablist">
+  <button role="tab" data-tab="map" class="on" aria-selected="true">Opportunity map</button>
+  <button role="tab" data-tab="emp" aria-selected="false">Employer demand <span style="font-weight:600;opacity:.75">(4-digit)</span><span class="tab-new">New</span></button>
+</div></nav>
+
+<div class="main" id="view-map">
   <!-- KPI row -->
   <div class="krow" id="kpis"></div>
 
@@ -302,7 +347,75 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
   <div class="foot" id="foot"></div>
 </div>
 
+<div class="main" id="view-emp" hidden>
+  <div class="krow" id="e-kpis"></div>
+
+  <div class="sec-eyebrow">Employer pull by 4-digit field of education</div>
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t">Shortage &times; projected growth, by 4-digit field</div>
+        <div class="card-s" id="e-quad-sub"></div>
+      </div>
+      <div class="e-ctrls">
+        <div class="seg light" id="e-seg-measure">
+          <button data-v="s" class="on">National shortage</button>
+          <button data-v="any">Incl. regional / metro</button>
+        </div>
+        <select class="card-sel" id="e-broad" style="min-width:200px"></select>
+        <button class="btn-png" id="e-btn-png" type="button">&#8681; Download PNG</button>
+      </div>
+    </div>
+    <div class="e-legend">
+      <span><i style="background:#2E7D5B"></i>CRICOS HE supply contracting</span>
+      <span><i style="background:#B8860B"></i>CRICOS HE supply expanding</span>
+      <span><i style="background:#9a928b"></i>No net change</span>
+      <span>Bubble size = degree-level workers, 2025</span>
+    </div>
+    <div class="chart-wrap quad"><canvas id="e-ch"></canvas></div>
+    <div class="qaxis-note">Top-right = <b>employers short and the jobs are growing</b>. Green bubbles there are the strongest reads: providers in the international (CRICOS) register are also <b>cutting</b> courses in that field. Dashed lines mark the all-field average growth and the 50% shortage line.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t">Field ranking</div>
+        <div class="card-s">All 4-digit fields with at least one mapped degree-level occupation. Click a column to sort, or a row to open its occupations below.</div>
+      </div>
+      <button class="btn-png" id="e-btn-csv" type="button">&#8681; Export CSV</button>
+    </div>
+    <div class="etbl-wrap"><table class="etbl" id="e-tbl"></table></div>
+  </div>
+
+  <div class="card">
+    <div class="card-hd">
+      <div>
+        <div class="card-t" id="e-fd-title">Field detail</div>
+        <div class="card-s">The occupations mapped to this field, their weight in it, projected growth and 2026 shortage rating.</div>
+      </div>
+      <select class="card-sel" id="e-fd-sel"></select>
+    </div>
+    <div class="etbl-wrap"><table class="etbl" id="e-occ"></table></div>
+    <div class="readout" id="e-fd-readout" style="margin-top:16px"></div>
+  </div>
+
+  <div class="card caveats">
+    <div class="card-t">&#9888;&#65039; Read this view with these caveats</div>
+    <ul class="cav-list">
+      <li><b>The crosswalk is curated, not measured.</b> Each of 113 degree-level occupations is assigned to the ASCED narrow field(s) that train for it, with split weights where it draws on several (e.g. Engineering Managers across civil, mechanical and electrical). Field-agnostic roles are excluded: CEOs and general managers, R&amp;D and other specialist managers, defence officers, university lecturers, VET teachers and private tutors. The mapping is in <code>scripts/anzsco_asced_crosswalk.csv</code> and is meant to be edited. The evidence-based replacement is a Census 2021 TableBuilder cross-tab of field of study (4-digit) by occupation (4-digit).</li>
+      <li><b>Degree-level occupations only</b> (ANZSCO skill level 1). Fields whose graduates mostly work in diploma- or trade-level roles are under-counted or absent, e.g. Tourism, Sport and Recreation, Food and Hospitality.</li>
+      <li><b>Shortage is a unit-group rating.</b> JSA rates each 4-digit occupation as Shortage, Regional, Metro or No shortage, so a field with one occupation reads as 0% or 100%. The share shown is the share of the field&rsquo;s mapped employment sitting in rated-shortage occupations.</li>
+      <li><b>Two occupation vintages.</b> The 2026 shortage list uses ANZSCO 2022; the employment projections use ANZSCO v1.3. Codes are joined directly; three occupations have no 2026 rating as a result (Crop Farmers, Mixed Crop and Livestock Farmers, ICT Trainers) and are left out of the shortage share, not counted as &ldquo;no shortage&rdquo;.</li>
+      <li><b>Supply is the international register.</b> The colour is net CRICOS higher-education course change (2025&rarr;2026). There is no public 4-digit measure of domestic course supply.</li>
+      <li><b>No ACU overlay and no student-demand axis here.</b> ACU commencements and domestic applications are broad-field only (applications reach 4-digit for Health and Agriculture alone), so this view measures the employer side of demand only. Use it alongside the Opportunity map, not instead of it.</li>
+    </ul>
+  </div>
+
+  <div class="foot" id="e-foot"></div>
+</div>
+
 <script src="data.js"></script>
+<script src="emp_data.js"></script>
 <script>
 (function(){
   "use strict";
@@ -895,6 +1008,246 @@ h1,h2,h3,.mono{font-family:'Manrope',Arial,Helvetica,sans-serif;}
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
+})();
+</script>
+<script>
+// ================= Tabs + Employer-demand (4-digit) view =================
+(function(){
+  "use strict";
+  var E = window.EMPDEMAND;
+  var HAS_DC = (typeof DashCommons !== 'undefined');
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function fmt1(n){ return Number(n).toLocaleString('en-AU',{minimumFractionDigits:1,maximumFractionDigits:1}); }
+  function sgn(n,dp){ var v=Number(n); return (v>=0?'+':'−')+Math.abs(v).toFixed(dp==null?1:dp); }
+  function sgnInt(n){ var v=Number(n); return v===0?'0':(v>0?'+':'−')+Math.abs(v); }
+  function getS(k,d){ return HAS_DC ? DashCommons.state.get(k,d) : d; }
+  function setS(k,v){ if(HAS_DC) DashCommons.state.set(k,v); }
+
+  // ---------- tabs ----------
+  var tab = getS('tab','map')==='emp' ? 'emp' : 'map';
+  var empRendered = false;
+  function showTab(t){
+    tab = t;
+    document.body.classList.toggle('tab-emp', t==='emp');
+    document.getElementById('view-map').hidden = (t!=='map');
+    document.getElementById('view-emp').hidden = (t!=='emp');
+    Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'), function(b){
+      var on = b.getAttribute('data-tab')===t; b.classList.toggle('on',on); b.setAttribute('aria-selected', on?'true':'false');
+    });
+    setS('tab', t==='emp' ? 'emp' : null);
+    if(t==='emp' && E && !empRendered){ empRendered = true; renderAll(); }
+  }
+
+  if(!E){ // data file missing: keep the map working, disable the tab
+    var b=document.querySelector('.tabbar button[data-tab="emp"]'); if(b) b.disabled=true;
+    return;
+  }
+
+  // ---------- state ----------
+  var CODES = Object.keys(E.fields);
+  var BROADS = {}; CODES.forEach(function(c){ var f=E.fields[c]; BROADS[f.broad]=f.broadName; });
+  var st = {
+    measure: getS('emeasure','s')==='any' ? 'any' : 's',
+    broad: getS('ebroad','all'),
+    field: getS('efield',null),
+    sort: 'add10', dir: -1
+  };
+  if(st.broad!=='all' && !BROADS[st.broad]) st.broad='all';
+  function shortOf(f){ var v = st.measure==='any' ? f.shortAny : f.shortS; return v==null?0:v; }
+  function visible(){ return CODES.filter(function(c){ return st.broad==='all' || E.fields[c].broad===st.broad; }); }
+  function totEmp(cs){ return cs.reduce(function(a,c){return a+E.fields[c].emp;},0); }
+  function avgGrowth(cs){ var e=0,a=0; cs.forEach(function(c){ e+=E.fields[c].emp; a+=E.fields[c].add10; }); return e? a/e*100 : 0; }
+  var AVG_ALL = avgGrowth(CODES);
+  function sigOf(c){
+    var f=E.fields[c], s=shortOf(f)>=50, g=f.g10>=AVG_ALL;
+    return s&&g?'SG':s?'S':g?'G':'N';
+  }
+  var SIG_LBL = { SG:'Shortage + growth', S:'Shortage', G:'Growth', N:'Neither' };
+  function supCol(f){ return f.heNet<0 ? '#2E7D5B' : f.heNet>0 ? '#B8860B' : '#9a928b'; }
+  function hexA(hex,a){ var h=hex.replace('#',''); return 'rgba('+parseInt(h.substr(0,2),16)+','+parseInt(h.substr(2,2),16)+','+parseInt(h.substr(4,2),16)+','+a+')'; }
+  function label(c){ return E.fields[c].name; }
+  if(!st.field || !E.fields[st.field]) st.field = CODES.slice().sort(function(a,b){return E.fields[b].emp-E.fields[a].emp;})[0];
+
+  // ---------- KPIs ----------
+  function renderKpis(){
+    var cs=visible(), mshort = st.measure==='any' ? ' (incl. regional/metro)' : '';
+    var emp=totEmp(cs), nOcc={};
+    cs.forEach(function(c){ E.fields[c].occs.forEach(function(o){ nOcc[o.code]=1; }); });
+    var byAdd=cs.slice().sort(function(a,b){return E.fields[b].add10-E.fields[a].add10;})[0];
+    var inShort=cs.filter(function(c){return shortOf(E.fields[c])>=50;}).sort(function(a,b){return E.fields[b].emp-E.fields[a].emp;});
+    var both=inShort.filter(function(c){return E.fields[c].heNet<0;});
+    function names(arr){ return arr.slice(0,3).map(function(c){return esc(label(c));}).join(', ')+(arr.length>3?' &hellip;':''); }
+    var k=[
+      {l:'Degree-level workers mapped, 2025', v:fmt1(emp/1000)+'m', s:Object.keys(nOcc).length+' occupations across '+cs.length+' fields'},
+      {l:'Most jobs added to 2035', v:byAdd?esc(label(byAdd)):'&ndash;', s:byAdd?'+'+fmt1(E.fields[byAdd].add10)+'k workers ('+sgn(E.fields[byAdd].g10)+'%)':'', cls:'k-open'},
+      {l:'Fields mostly in shortage'+mshort, v:inShort.length+' of '+cs.length, s:inShort.length?'Largest: '+names(inShort):'None at this filter', cls:'k-hot'},
+      {l:'In shortage and CRICOS supply contracting', v:String(both.length), s:both.length?names(both):'None at this filter', cls:'k-open'}
+    ];
+    document.getElementById('e-kpis').innerHTML=k.map(function(x){
+      return '<div class="kpi '+(x.cls||'')+'"><div class="klbl">'+x.l+'</div><div class="kval" style="font-size:'+(x.v.length>18?'1.1rem':'1.5rem')+'">'+x.v+'</div><div class="ksub">'+x.s+'</div></div>';
+    }).join('');
+  }
+
+  // ---------- scatter ----------
+  var ch=null;
+  var refPlugin={ id:'eref', afterDraw:function(c){
+    var x=c.scales.x, y=c.scales.y, g=c.ctx; g.save(); g.setLineDash([5,4]); g.strokeStyle='rgba(60,16,83,.35)'; g.lineWidth=1;
+    var px=x.getPixelForValue(AVG_ALL); g.beginPath(); g.moveTo(px,y.top); g.lineTo(px,y.bottom); g.stroke();
+    var py=y.getPixelForValue(50); g.beginPath(); g.moveTo(x.left,py); g.lineTo(x.right,py); g.stroke();
+    g.setLineDash([]); g.font='700 10px Arial'; g.fillStyle='rgba(46,125,91,.9)'; g.textAlign='right';
+    g.fillText('SHORTAGE + GROWTH \u2197', x.right-6, py-8);
+    g.fillStyle='rgba(92,86,81,.75)'; g.textAlign='left'; g.fillText('NEITHER', x.left+6, y.bottom-8);
+    // labels for the larger bubbles
+    // labels for the larger bubbles, largest first, skipping any that would collide with one already drawn
+    g.font='700 10px Arial'; g.fillStyle='#1E1B18'; g.textAlign='center';
+    var placed=[], ds=c.data.datasets[0].data, els=c.getDatasetMeta(0).data;
+    els.map(function(el,i){ return {el:el,p:ds[i]}; }).filter(function(o){ return o.p.lab; })
+      .sort(function(a,b){ return b.p.r-a.p.r; })
+      .forEach(function(o){
+        var w=g.measureText(o.p.lab).width, cx=o.el.x, cy=o.el.y-o.el.options.radius-4;
+        var r={l:cx-w/2-2,r:cx+w/2+2,t:cy-10,b:cy+2};
+        if(placed.some(function(q){ return r.l<q.r && r.r>q.l && r.t<q.b && r.b>q.t; })) return;
+        placed.push(r); g.fillText(o.p.lab, cx, cy);
+      });
+    g.restore();
+  }};
+  function renderChart(){
+    var cs=visible();
+    var maxE=Math.max.apply(null, CODES.map(function(c){return E.fields[c].emp;}));
+    var big=cs.slice().sort(function(a,b){return E.fields[b].emp-E.fields[a].emp;}).slice(0,8);
+    var pts=cs.map(function(c){ var f=E.fields[c];
+      return { x:f.g10, y:shortOf(f), r:4+22*Math.sqrt(f.emp/maxE), code:c, lab: big.indexOf(c)>-1 ? (f.name.length>22?f.name.slice(0,21)+'…':f.name) : null };
+    });
+    var cols=cs.map(function(c){return supCol(E.fields[c]);});
+    var xs=pts.map(function(p){return p.x;}), xmin=Math.min.apply(null,xs.concat([AVG_ALL])), xmax=Math.max.apply(null,xs.concat([AVG_ALL]));
+    var ctx=document.getElementById('e-ch').getContext('2d');
+    if(ch) ch.destroy();
+    ch=new Chart(ctx,{ type:'bubble',
+      data:{datasets:[{ data:pts, backgroundColor:cols.map(function(c){return hexA(c,.62);}), borderColor:cols, borderWidth:1.5, hoverBorderWidth:2.5 }]},
+      options:{ responsive:true, maintainAspectRatio:false, layout:{padding:{top:18,right:10}},
+        onClick:function(ev,els){ if(els.length){ selectField(pts[els[0].index].code, true); } },
+        plugins:{ legend:{display:false},
+          tooltip:{ backgroundColor:'#fff', borderColor:'#ede4dc', borderWidth:1, titleColor:'#1E1B18', bodyColor:'#5C5651', padding:12, displayColors:false,
+            callbacks:{ title:function(it){ var c=it[0].raw.code; return c+' '+label(c); },
+              label:function(it){ var f=E.fields[it.raw.code];
+                return [ 'Workers 2025: '+fmt1(f.emp)+'k', 'Growth to 2035: '+sgn(f.g10)+'% ('+sgn(f.add10)+'k)',
+                  'In shortage: '+shortOf(f).toFixed(0)+'% of mapped employment', 'CRICOS HE courses: '+sgnInt(f.heNet)+' net (2025→2026)',
+                  'Click for occupations' ]; } } } },
+        scales:{
+          x:{ min:Math.floor(xmin-2), max:Math.ceil(xmax+2), grid:{color:'rgba(30,27,24,.05)'},
+              title:{display:true,text:'Projected employment growth, May 2025 → May 2035 (%)  → jobs growing faster',color:'#5C5651',font:{size:11,weight:'700'}},
+              ticks:{color:'#5C5651',font:{size:10},callback:function(v){return v+'%';}} },
+          y:{ min:-8, max:108, grid:{color:'rgba(30,27,24,.05)'},
+              title:{display:true,text:'Share of the field’s degree-level employment in shortage (%)  ↑',color:'#5C5651',font:{size:11,weight:'700'}},
+              ticks:{color:'#5C5651',font:{size:10},stepSize:25,callback:function(v){return (v>=0&&v<=100)?v+'%':'';}} } } },
+      plugins:[refPlugin] });
+    document.getElementById('e-quad-sub').innerHTML='Each bubble is one ASCED narrow (4-digit) field'+(st.broad==='all'?'':' within <b>'+esc(BROADS[st.broad])+'</b>')
+      +'. Horizontal = projected growth in the degree-level jobs that draw on it; vertical = share of those jobs JSA rates <b>'+(st.measure==='any'?'in shortage nationally, regionally or in metro areas':'in national shortage')
+      +'</b> (2026). Colour = CRICOS higher-ed course supply direction. Average growth across all mapped fields: <b>'+sgn(AVG_ALL)+'%</b>.';
+  }
+
+  // ---------- ranking table ----------
+  var COLS=[
+    {k:'name', h:'Field (4-digit)', v:function(f){return f.name;}},
+    {k:'emp', h:'Workers 2025 (k)', v:function(f){return f.emp;}},
+    {k:'g10', h:'Growth to 2035', v:function(f){return f.g10;}},
+    {k:'add10', h:'Jobs added (k)', v:function(f){return f.add10;}},
+    {k:'short', h:'In shortage', v:function(f){return shortOf(f);}},
+    {k:'heNet', h:'CRICOS HE net', v:function(f){return f.heNet;}},
+    {k:'sig', h:'Signal', v:null}
+  ];
+  function renderTable(){
+    var cs=visible().slice(), col=COLS.filter(function(c){return c.k===st.sort;})[0];
+    cs.sort(function(a,b){ var va=col.v(E.fields[a]), vb=col.v(E.fields[b]);
+      return (typeof va==='string' ? va.localeCompare(vb) : va-vb)*st.dir; });
+    var th='<tr>'+COLS.map(function(c){ return '<th data-k="'+c.k+'" class="'+(c.k===st.sort?'sorted':'')+'">'+c.h+(c.k===st.sort?(st.dir<0?' ▾':' ▴'):'')+'</th>'; }).join('')+'</tr>';
+    var rows=cs.map(function(c){ var f=E.fields[c], sh=shortOf(f), sg=sigOf(c);
+      return '<tr class="clk'+(c===st.field?' sel':'')+'" data-c="'+c+'">'
+        +'<td><span class="fcode">'+c+'</span>'+esc(f.name)+'<span class="bname">'+esc(f.broadName)+'</span></td>'
+        +'<td>'+fmt1(f.emp)+'</td><td>'+sgn(f.g10)+'%</td><td>'+sgn(f.add10)+'</td>'
+        +'<td>'+sh.toFixed(0)+'%<span class="meter"><b style="width:'+sh+'%"></b></span></td>'
+        +'<td class="'+(f.heNet<0?'neg':f.heNet>0?'pos':'')+'">'+sgnInt(f.heNet)+'</td>'
+        +'<td><span class="sig '+sg+'">'+SIG_LBL[sg]+'</span></td></tr>';
+    }).join('');
+    var t=document.getElementById('e-tbl'); t.innerHTML='<thead>'+th+'</thead><tbody>'+rows+'</tbody>';
+    Array.prototype.forEach.call(t.querySelectorAll('th[data-k]'),function(h){ h.onclick=function(){
+      var k=h.getAttribute('data-k'); if(k==='sig') return;
+      if(st.sort===k) st.dir=-st.dir; else { st.sort=k; st.dir=(k==='name'?1:-1); }
+      renderTable(); }; });
+    Array.prototype.forEach.call(t.querySelectorAll('tr[data-c]'),function(r){ r.onclick=function(){ selectField(r.getAttribute('data-c'), true); }; });
+  }
+
+  // ---------- field detail ----------
+  function buildSel(){
+    var s=document.getElementById('e-fd-sel');
+    s.innerHTML=CODES.slice().sort().map(function(c){ return '<option value="'+c+'">'+c+' '+esc(label(c))+'</option>'; }).join('');
+    s.value=st.field; s.onchange=function(){ selectField(s.value,false); };
+    var b=document.getElementById('e-broad');
+    b.innerHTML='<option value="all">All broad fields</option>'+Object.keys(BROADS).sort().map(function(k){ return '<option value="'+k+'">'+k+' '+esc(BROADS[k])+'</option>'; }).join('');
+    b.value=st.broad; b.onchange=function(){ st.broad=b.value; setS('ebroad', st.broad==='all'?null:st.broad); renderAll(); };
+  }
+  function selectField(c, scroll){
+    st.field=c; setS('efield', c);
+    document.getElementById('e-fd-sel').value=c;
+    renderDetail(); renderTable();
+    if(scroll){ var el=document.getElementById('e-fd-title'); if(el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+  }
+  function renderDetail(){
+    var c=st.field, f=E.fields[c];
+    document.getElementById('e-fd-title').textContent='Field detail — '+c+' '+f.name;
+    var head='<tr><th>Occupation (ANZSCO 4-digit)</th><th>Weight in field</th><th>Workers 2025 (k)</th><th>Growth to 2035</th><th>2026 rating</th><th>Shortage driver</th></tr>';
+    var rows=f.occs.map(function(o){
+      var r=o.rating||'na', rl={S:'Shortage',R:'Regional',M:'Metro',NS:'No shortage',na:'Not rated'}[r]||r;
+      return '<tr><td><span class="fcode">'+o.code+'</span>'+esc(o.name)+'</td><td>'+(o.w<1?Math.round(o.w*100)+'%':'100%')+'</td>'
+        +'<td>'+fmt1(o.emp)+'</td><td>'+(o.g10==null?'&ndash;':sgn(o.g10)+'%')+'</td>'
+        +'<td><span class="rate '+r+'">'+rl+'</span></td><td style="white-space:normal;text-align:left;max-width:260px">'+esc(o.driver||'')+'</td></tr>';
+    }).join('');
+    document.getElementById('e-occ').innerHTML='<thead>'+head+'</thead><tbody>'+rows+'</tbody>';
+    var sh=shortOf(f), sg=sigOf(c);
+    var sup = f.heNet<0 ? 'international providers <b>cut</b> '+Math.abs(f.heNet)+' net higher-ed CRICOS courses ('+f.heNew+' new, '+f.heRem+' removed)'
+            : f.heNet>0 ? 'international providers <b>added</b> '+f.heNet+' net higher-ed CRICOS courses ('+f.heNew+' new, '+f.heRem+' removed)'
+            : 'higher-ed CRICOS supply was flat ('+f.heNew+' new, '+f.heRem+' removed)';
+    document.getElementById('e-fd-readout').innerHTML='<b>'+esc(f.name)+'</b> maps to <b>'+fmt1(f.emp)+'k</b> degree-level workers, projected to grow <b>'+sgn(f.g10)+'%</b> to 2035 (all-field average '+sgn(AVG_ALL)+'%). '
+      +'<b>'+sh.toFixed(0)+'%</b> of that employment is in occupations rated in '+(st.measure==='any'?'national, regional or metro':'national')+' shortage for 2026'
+      +(f.ratedPct<100?' ('+(100-f.ratedPct)+'% of it has no 2026 rating and is left out)':'')+'. Between 2025 and 2026, '+sup+'. '
+      +'Signal: <span class="sig '+sg+'">'+SIG_LBL[sg]+'</span>';
+  }
+
+  // ---------- CSV / PNG / foot ----------
+  function exportCsv(){
+    var rows=[['field_code','field','broad_field','workers_2025_k','growth_2035_pct','jobs_added_k','shortage_share_pct','shortage_measure','share_rated_pct','cricos_he_new','cricos_he_removed','cricos_he_net','signal','occupations']];
+    visible().forEach(function(c){ var f=E.fields[c];
+      rows.push([c,f.name,f.broadName,f.emp,f.g10,f.add10,shortOf(f),st.measure==='any'?'national+regional+metro':'national',f.ratedPct,f.heNew,f.heRem,f.heNet,SIG_LBL[sigOf(c)],
+        f.occs.map(function(o){return o.code+' '+o.name+(o.w<1?' ('+Math.round(o.w*100)+'%)':'');}).join('; ')]); });
+    var csv=rows.map(function(r){ return r.map(function(v){ var s=String(v==null?'':v); return /[",\n;]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }).join('\n');
+    var url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+    var a=document.createElement('a'); a.href=url; a.download='employer-demand-4digit_'+st.measure+'_'+st.broad+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+  function renderFoot(){
+    var s=E.sources;
+    document.getElementById('e-foot').innerHTML='<b>Sources.</b> '+esc(s.osl)+'. '+esc(s.proj)+'. Supply: '+esc(s.cricos)+'. Bridge: '+esc(s.crosswalk)
+      +'. Built '+esc(E.generated)+' by <code>scripts/build_employer.py</code>.';
+  }
+  function renderAll(){ renderKpis(); renderChart(); renderTable(); renderDetail(); }
+
+  function boot(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tabbar button'),function(b){ b.onclick=function(){ showTab(b.getAttribute('data-tab')); }; });
+    Array.prototype.forEach.call(document.querySelectorAll('#e-seg-measure button'),function(b){
+      b.classList.toggle('on', b.getAttribute('data-v')===st.measure);
+      b.onclick=function(){ st.measure=b.getAttribute('data-v'); setS('emeasure', st.measure==='any'?'any':null);
+        Array.prototype.forEach.call(document.querySelectorAll('#e-seg-measure button'),function(x){ x.classList.toggle('on', x===b); });
+        renderAll(); };
+    });
+    document.getElementById('e-btn-csv').onclick=exportCsv;
+    document.getElementById('e-btn-png').onclick=function(){
+      if(!ch || !HAS_DC) return;
+      DashCommons.downloadFile(ch.toBase64Image('image/png',1),'demand-supply-map-employer-demand-'+new Date().toISOString().slice(0,10)+'.png');
+    };
+    buildSel(); renderFoot();
+    showTab(tab);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
 </body>

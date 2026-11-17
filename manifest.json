@@ -3,11 +3,30 @@
   "title": "Demand & Supply Opportunity Map",
   "url": "https://pdparker.github.io/demand-supply-map/",
   "repo": "pdparker/demand-supply-map",
-  "lastBuild": "2026-11-14",
+  "lastBuild": "2026-11-17",
   "dataSources": [
-    { "name": "Domestic university application share by field (Student Interest Signals / Dept of Education)", "vintage": "2010-2025" },
-    { "name": "CRICOS course net change by broad field (CRICOS dashboard)", "vintage": "2025 vs 2026" },
-    { "name": "ACU commencing enrolments by field (Student Interest Signals)", "vintage": "2017-2025" }
+    {
+      "name": "Domestic university application share by field (Student Interest Signals / Dept of Education)",
+      "vintage": "2010-2025"
+    },
+    {
+      "name": "CRICOS course net change by broad field (CRICOS dashboard)",
+      "vintage": "2025 vs 2026"
+    },
+    {
+      "name": "ACU commencing enrolments by field (Student Interest Signals)",
+      "vintage": "2017-2025"
+    },
+    {
+      "name": "Jobs and Skills Australia — 2026 Occupation Shortage List, unit group (4-digit ANZSCO 2022) national ratings (Employer demand tab)",
+      "vintage": "2026 (released Oct 2026)",
+      "refreshed": "2026-11-17"
+    },
+    {
+      "name": "Jobs and Skills Australia — Employment Projections May 2025 to May 2035, by 4-digit ANZSCO unit group (Employer demand tab)",
+      "vintage": "May 2025 baseline, projected to May 2035",
+      "refreshed": "2026-11-17"
+    }
   ],
-  "notes": "Joins domestic demand momentum (application share by ASCED broad field) against international-register supply momentum (CRICOS net course change) to map fields as Open / Hot / Crowded / Fading, with an ACU-portfolio overlay. Demand and supply are different markets (domestic vs international register) — read directionally. CRICOS all-levels supply is VET-dominated; the higher-ed cut is the university lens."
+  "notes": "Joins domestic demand momentum (application share by ASCED broad field) against international-register supply momentum (CRICOS net course change) to map fields as Open / Hot / Crowded / Fading, with an ACU-portfolio overlay. Demand and supply are different markets (domestic vs international register) — read directionally. CRICOS all-levels supply is VET-dominated; the higher-ed cut is the university lens. Employer demand tab (added 2026-11-17): degree-level occupations mapped to ASCED narrow (4-digit) fields via a curated crosswalk (scripts/anzsco_asced_crosswalk.csv), showing projected employment growth and the share of each field's mapped employment in 2026 shortage, coloured by CRICOS higher-ed supply direction. The crosswalk is judgement, not measured graduate flows; no ACU overlay at 4-digit."
 }
